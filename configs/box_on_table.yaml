@@ -1,0 +1,24 @@
+﻿# 1. 环境配置
+environment:
+  env_id: "PushCube-v1" # 我们选用一个简单的推方块环境作为示例
+  render_mode: "rgb_array" # 必须是rgb_array才能录制视频
+  obs_mode: "state" # 使用 "state" observation 来获取物体的位置信息
+
+# 2. 录制配置
+recorder:
+  output_dir: "data/push_cube_circular_motion" # 视频和数据保存的路径
+  seed: 42 # 随机种子，确保实验可复现
+
+# 3. 运动模式配置
+# 定义让场景中的物体如何运动
+motion:
+  # 运动模式的名称，需要与 motion.py 中的实现对应
+  name: "circular_push"
+
+  # 该运动模式所需要的特定参数
+  params:
+    target_object_name: "cube" # 要推动的目标物体的名字，在PushCube-v1中就是"cube"
+    center: [0.1, 0.0] # 机械臂末端执行器（gripper）运动的圆心 [x, y]
+    radius: 0.15 # 圆周运动的半径 (米)
+    speed: 0.5 # 运动速度 (弧度/秒)
+    height: 0.05 # 机械臂末端在运动过程中的固定高度 (米)
