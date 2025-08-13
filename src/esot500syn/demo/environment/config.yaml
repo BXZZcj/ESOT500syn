@@ -1,0 +1,36 @@
+﻿# config.yaml (无需改动)
+env:
+  env_type: "ArchitecTHOR" # ArchitecTHOR, ReplicaCAD, RoboCasa
+  robot_uids: "none"
+  obs_mode: "sensor_data"
+
+scene:
+  robocasa_params:
+    layout_ids: -1 # 0-9
+    style_ids: -1 # 0-11
+  archithor_params:
+    build_config_idx: 3 # 0-9
+  replicacad_params:
+    build_config_idx: 15 # 0-5
+
+simulation:
+  sim_backend: "gpu"
+  num_steps: 1
+  seed: 42
+
+output:
+  image_dir: "images/my_universal_runs"
+  render_mode: null
+
+camera:
+  width: 512
+  height: 512
+  # Suitable for ArchitecTHOR
+  pose_p: [-1, 1.5, 1.5]
+  pose_g: [-1, 3.0, 1.0]
+  # Suitable for ReplicaCAD
+  # pose_p: [0, -3, 2]
+  # pose_g: [0, 0, 1]
+  # Suitable for RoboCasa
+  # pose_p: [3, -5.5, 3]
+  # pose_g: [3.0, -2, 0.]
