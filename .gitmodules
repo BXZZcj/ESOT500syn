@@ -1,0 +1,3 @@
+[submodule "libs/V2CE-Toolbox"]
+	path = libs/V2CE-Toolbox
+	url = https://github.com/ucsd-hdsi-dvs/V2CE-Toolbox.git
