@@ -1,5 +1,4 @@
-﻿# src/esot500syn/simulation/scene_builders.py
-import torch
+﻿import torch
 from mani_skill.utils.scene_builder.ai2thor import ArchitecTHORSceneBuilder
 from mani_skill.utils.scene_builder.replicacad import ReplicaCADSceneBuilder
 from mani_skill.utils.scene_builder.registration import register_scene_builder

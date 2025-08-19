@@ -3,15 +3,22 @@ import numpy as np
 import sapien
 import torch
 import os
+import json
 from pathlib import Path
 from PIL import Image
 import argparse
 import yaml
-from typing import List, Optional
+from typing import Dict, Callable
 
-# ===============================================================================================
-# ... 导入部分和SceneBuilder补丁部分 (1-2) 完全不变 ...
-# ===============================================================================================
+# Math and Transformation Imports
+import transforms3d.euler as t3d_euler
+import transforms3d.quaternions as t3d_quat
+
+# --- NEW: Add imports for amodal mask generation ---
+import trimesh
+import cv2
+
+# ManiSkill Imports
 from mani_skill.envs.scenes.base_env import SceneManipulationEnv
 from mani_skill.envs.tasks.mobile_manipulation.robocasa.kitchen import RoboCasaKitchenEnv
 from mani_skill.utils.registration import register_env
@@ -22,205 +29,387 @@ from mani_skill.utils.scene_builder.replicacad import ReplicaCADSceneBuilder
 from mani_skill.utils.scene_builder.registration import register_scene_builder
 from mani_skill.utils.structs import Actor, Articulation
 
-@register_scene_builder("MyArchitecTHOR_NoRobot")
-class MyArchitecTHORSceneBuilder_NoRobot(ArchitecTHORSceneBuilder):
+# --- (Motion and Camera Registries remain the same) ---
+MOTION_PATTERNS: Dict[str, Callable] = {}
+
+
+def register_motion_pattern(name: str):
+    def decorator(func: Callable):
+        MOTION_PATTERNS[name] = func
+        return func
+    return decorator
+
+
+@register_motion_pattern("static")
+def motion_static(mixin, start_pose, config):
+    pass
+
+
+@register_motion_pattern("oscillate_z")
+def motion_oscillate_z(mixin, start_pose, config):
+    start_p = start_pose.p
+    z_center = start_p[2]
+    new_z = z_center + 0.5 * np.sin(mixin._elapsed_steps[0].item() * 0.1)
+    return sapien.Pose(p=[start_p[0], start_p[1], new_z])
+
+
+@register_motion_pattern("circular_xy")
+def motion_circular_xy(mixin, start_pose, config):
+    params = config.get("motion_params", {})
+    radius, speed, start_p = params.get("radius", 0.5), params.get("speed", 0.1), start_pose.p
+    angle = mixin._elapsed_steps[0].item() * speed
+    new_x, new_y = start_p[0] + radius * np.cos(angle), start_p[1] + radius * np.sin(angle)
+    return sapien.Pose(p=[new_x, new_y, start_p[2]])
+
+
+CAMERA_MOTION_PATTERNS: Dict[str, Callable] = {}
+
+
+def register_camera_motion(name: str):
+    def decorator(func: Callable):
+        CAMERA_MOTION_PATTERNS[name] = func
+        return func
+    return decorator
+
+
+@register_camera_motion("static")
+def camera_motion_static(step, sensor, initial_pose, cfg):
+    pass
+
+
+@register_camera_motion("shake")
+def camera_motion_shake(step, sensor, initial_pose, cfg):
+    params = cfg.get("params", {})
+    pos_amp, rot_amp = params.get("pos_amp", 0.05), params.get("rot_amp", 0.05)
+    time = float(step)
+    pos_offset = np.array([pos_amp * np.sin(time * 0.2), pos_amp * np.cos(time * 0.35), 0])
+    rot_offset_q = t3d_euler.euler2quat(0, rot_amp * np.cos(time * 0.15), rot_amp * np.sin(time * 0.4), 'sxyz')
+    initial_q_flat = np.array(initial_pose.q).flatten()
+    new_q = t3d_quat.qmult(initial_q_flat, rot_offset_q)
+    new_p_tensor = initial_pose.p + pos_offset
+    final_p = new_p_tensor.cpu().numpy().flatten().astype(np.float32)
+    final_q = np.array(new_q).flatten().astype(np.float32)
+    sensor.camera.set_local_pose(sapien.Pose(p=final_p, q=final_q))
+
+# --- (SceneBuilders and Mixins remain the same) ---
+class ConfigurableLightingSceneBuilder:
+    def __init__(self, *args, **kwargs):
+        self.lighting_config = None
+        super().__init__(*args, **kwargs)
+
+    def build_lighting(self):
+        if not self.lighting_config:
+            return
+        scene = self.env.scene
+        if 'ambient' in self.lighting_config:
+            scene.set_ambient_light(self.lighting_config['ambient'])
+        for light_info in self.lighting_config.get('point_lights', []):
+            scene.add_point_light(light_info['position'], color=light_info['color'])
+        if 'directional_light' in self.lighting_config:
+            dl_cfg = self.lighting_config['directional_light']
+            scene.add_directional_light(dl_cfg['direction'], color=dl_cfg['color'], shadow=dl_cfg.get('shadow', False))
+
+
+@register_scene_builder("ESOT500syn_ArchitecTHOR_NoRobot")
+class ESOT500synArchitecTHORSceneBuilder(ConfigurableLightingSceneBuilder, ArchitecTHORSceneBuilder):
+    def build(self, *args, **kwargs):
+        super().build(*args, **kwargs)
+        self.build_lighting()
+
     def initialize(self, env_idx):
         for obj, pose in self._default_object_poses:
             obj.set_pose(pose)
             if isinstance(obj, Articulation):
                 obj.set_qpos(obj.qpos[0] * 0)
 
-@register_scene_builder("MyReplicaCAD_NoRobot")
-class MyReplicaCADSceneBuilder_NoRobot(ReplicaCADSceneBuilder):
+
+@register_scene_builder("ESOT500syn_ReplicaCAD_NoRobot")
+class ESOT500synReplicaCADSceneBuilder(ConfigurableLightingSceneBuilder, ReplicaCADSceneBuilder):
+    def build(self, *args, **kwargs):
+        super().build(*args, **kwargs)
+        self.build_lighting()
+
     def initialize(self, env_idx: torch.Tensor):
         for obj, pose in self._default_object_poses:
             obj.set_pose(pose)
             if isinstance(obj, Articulation):
                 obj.set_qpos(obj.qpos[0] * 0)
                 obj.set_qvel(obj.qvel[0] * 0)
-        if self.scene.gpu_sim_enabled and len(env_idx) == self.env.num_envs:
-            self.scene._gpu_apply_all()
-            self.scene.px.gpu_update_articulation_kinematics()
-            self.scene.px.step()
-            self.scene._gpu_fetch_all()
 
 
-# ===============================================================================================
-# 3. 修正 BananaAddonMixin
-# ===============================================================================================
-class BananaAddonMixin:
-    # +++ 核心修正 1：在__init__中添加一个实例变量来存储起始姿态 +++
+class CustomAssetMixin:
     def __init__(self, *args, **kwargs):
-        self.banana_start_pose = None # 用于存储每个episode的起始姿态
+        self.custom_asset_config = kwargs.pop("custom_asset_config", {})
+        self.distractor_assets_config = kwargs.pop("distractor_assets_config", [])
+        self.custom_actor = None
+        self.distractors = []
         super().__init__(*args, **kwargs)
 
-    def add_banana_to_scene(self):
-        banana_assets_dir = os.path.expanduser("~/.maniskill/data/assets/mani_skill2_ycb/models/011_banana")
-        visual_filepath = os.path.join(banana_assets_dir, "textured.obj")
-        collision_filepath = os.path.join(banana_assets_dir, "collision.ply")
+    def _build_actor_from_config(self, config: Dict) -> Actor | None:
+        if not config.get("enable"):
+            return None
+        visual_path = Path(os.path.expanduser(config["visual_filepath"]))
+        collision_path = Path(os.path.expanduser(config["collision_filepath"]))
+        if not (visual_path.exists() and collision_path.exists()):
+            print(f"Warning: Asset files not found for '{config.get('name')}'. Skipping.")
+            return None
+        
         builder = self.scene.create_actor_builder()
-        # 设置一个默认的build-time初始姿态，以避免ManiSkill警告
-        builder.initial_pose = sapien.Pose() 
-        builder.add_convex_collision_from_file(filename=collision_filepath)
-        builder.add_visual_from_file(filename=visual_filepath)
-        self.banana_actor = builder.build_kinematic(name="banana")
 
-    def initialize_banana_pose(self, pose: sapien.Pose):
-        # +++ 核心修正 2：在初始化时，不仅设置当前姿态，还记录下这个起始姿态 +++
-        self.banana_actor.set_pose(pose)
-        self.banana_start_pose = pose # 记录本episode的起始点
+        # --- THE FIX IS HERE ---
+        # Set the initial pose on the builder BEFORE building the actor.
+        # This resolves the warning and follows best practices.
+        initial_pos = config.get("initial_pose_p", [0, 0, 1]) # Default to a safe position
+        builder.initial_pose = sapien.Pose(p=initial_pos)
+        builder.add_convex_collision_from_file(filename=str(collision_path))
+        builder.add_visual_from_file(filename=str(visual_path))
+        return builder.build_kinematic(name=config.get("name", visual_path.stem))
 
-    def update_banana_pose(self):
-        if self.banana_actor and self.banana_start_pose is not None:
-            # +++ 核心修正 3：使用记录的起始姿态，而不是错误的initial_pose +++
-            start_p = self.banana_start_pose.p # 这是一个 (3,) 的numpy数组
-            base_z = start_p[2] # 正确地获取z坐标
-            
-            new_z = base_z + 0.5 * np.sin(self._elapsed_steps[0].item() * 0.1)
-            # 围绕正确的x, y坐标进行振荡
-            new_pose = sapien.Pose(p=[start_p[0], start_p[1], new_z])
-            self.banana_actor.set_pose(new_pose)
+    def add_assets_to_scene(self):
+        self.custom_actor = self._build_actor_from_config(self.custom_asset_config)
+        for d_config in self.distractor_assets_config:
+            actor = self._build_actor_from_config(d_config)
+            if actor:
+                motion_func = MOTION_PATTERNS.get(d_config.get("motion_mode", "static"), MOTION_PATTERNS["static"])
+                self.distractors.append({"actor": actor, "config": d_config, "motion_func": motion_func, "start_pose": None})
 
-# ===============================================================================================
-# 4. 工厂函数现在可以正确工作了，因为它依赖的Mixin被修正了 (无变动)
-# ===============================================================================================
-def create_and_register_env(env_type: str, camera_pose_p: list, camera_pose_g: list):
-    # ... (这部分代码无需改动) ...
-    class CustomEnvBase(BananaAddonMixin):
+    def initialize_asset_poses(self):
+        if self.custom_actor:
+            pos = self.custom_asset_config.get("initial_pose_p", [0, 0, 1])
+            self.custom_asset_start_pose = sapien.Pose(p=pos)
+            self.custom_actor.set_pose(self.custom_asset_start_pose)
+        for d in self.distractors:
+            pos = d["config"].get("initial_pose_p", [0, 0, 1])
+            d["start_pose"] = sapien.Pose(p=pos)
+            d["actor"].set_pose(d["start_pose"])
+
+    def update_asset_poses(self):
+        if self.custom_actor:
+            motion_func = MOTION_PATTERNS.get(self.custom_asset_config.get("motion_mode", "static"))
+            if motion_func:
+                new_pose = motion_func(self, self.custom_asset_start_pose, self.custom_asset_config)
+                if new_pose:
+                    self.custom_actor.set_pose(new_pose)
+        for d in self.distractors:
+            new_pose = d["motion_func"](self, d["start_pose"], d["config"])
+            if new_pose:
+                d["actor"].set_pose(new_pose)
+
+
+def create_and_register_env(env_type: str, camera_pos: list, camera_target: list):
+    class CustomEnvBase(CustomAssetMixin):
+        def __init__(self, *args, **kwargs):
+            self.lighting_config = kwargs.pop("lighting_config", {})
+            super().__init__(*args, **kwargs)
+            if hasattr(self, "scene_builder") and isinstance(self.scene_builder, ConfigurableLightingSceneBuilder):
+                self.scene_builder.lighting_config = self.lighting_config
+        
         def _get_obs_agent(self):
-            return {} if self.agent is None else super()._get_obs_agent()
+            return {}
+
         @property
         def _default_sensor_configs(self):
-            camera_pose = sapien_utils.look_at(camera_pose_p, camera_pose_g)
-            return [CameraConfig("base_camera", camera_pose, 512, 512, np.pi / 2, 0.01, 100)]
+            return [CameraConfig("base_camera", sapien_utils.look_at(camera_pos, camera_target), 512, 512, np.pi/2, 0.01, 100)]
+        
         def _load_scene(self, options: dict):
             super()._load_scene(options)
-            self.add_banana_to_scene()
+            self.add_assets_to_scene()
+        
+        def _initialize_episode(self, env_idx, options):
+            super()._initialize_episode(env_idx, options)
+            self.initialize_asset_poses()
+        
         def _step_action(self, action):
-            ret = super()._step_action(action)
-            self.update_banana_pose()
-            return ret
+            return_val = super()._step_action(action)
+            self.update_asset_poses()
+            return return_val
 
-    if env_type == "RoboCasa":
-        @register_env("UniversalManiSkillEnv-v1", max_episode_steps=50, override=True)
-        class UniversalRoboCasaEnv(CustomEnvBase, RoboCasaKitchenEnv):
-            def _initialize_episode(self, env_idx: int, options: dict):
-                super()._initialize_episode(env_idx, options)
-                self.initialize_banana_pose(sapien.Pose(p=[3.0, -2.0, 1.0]))
+    env_id = "ESOT500syn-v1"
+    base_classes = (CustomEnvBase, SceneManipulationEnv) if env_type != "RoboCasa" else (CustomEnvBase, RoboCasaKitchenEnv)
     
-    elif env_type in ["ArchitecTHOR", "ReplicaCAD"]:
-        @register_env("UniversalManiSkillEnv-v1", max_episode_steps=50, override=True)
-        class UniversalSceneManipulationEnv(CustomEnvBase, SceneManipulationEnv):
-            def __init__(self, *args, **kwargs):
-                self.banana_actor = None
-                kwargs_copy = kwargs.copy()
-                if env_type == "ArchitecTHOR":
-                    kwargs_copy['scene_builder_cls'] = "MyArchitecTHOR_NoRobot"
-                else:
-                    kwargs_copy['scene_builder_cls'] = "MyReplicaCAD_NoRobot"
-                super().__init__(*args, **kwargs_copy)
-            
-            def _initialize_episode(self, env_idx: int, options: dict):
-                super()._initialize_episode(env_idx, options)
-                self.initialize_banana_pose(sapien.Pose(p=[-1.0, 0.0, 1.5]))
-    else:
-        raise ValueError(f"Unknown env_type: {env_type}")
+    @register_env(env_id, max_episode_steps=50, override=True)
+    class ESOT500synEnv(*base_classes):
+        def __init__(self, *args, **kwargs):
+            if env_type in ["ArchitecTHOR", "ReplicaCAD"]:
+                kwargs['scene_builder_cls'] = f"ESOT500syn_{env_type}_NoRobot"
+            super().__init__(*args, **kwargs)
+    return env_id
 
-# ===============================================================================================
-# ... main函数和启动器 (6-7) 完全不变 ...
-# ===============================================================================================
-def main(cfg: dict):
-    # ... (这部分代码无需改动) ...
+# --- Amodal Mask and Bbox Generation Functions ---
+def load_mesh_vertices_faces(mesh_path: str):
+    mesh_path = os.path.expanduser(mesh_path)
+    try:
+        mesh = trimesh.load(mesh_path, force='mesh', process=False)
+        if isinstance(mesh, trimesh.Scene):
+            mesh = trimesh.util.concatenate(mesh.dump())
+        return np.asarray(mesh.vertices, dtype=np.float32), np.asarray(mesh.faces, dtype=np.int32)
+    except Exception as e:
+        print(f"Error loading mesh {mesh_path}: {e}")
+        return None, None
+
+
+def rasterize_amodal_mask(vertices_obj, faces, t_cam_robot, q_wxyz_robot, fx, fy, cx, cy, width, height):
+    R_robot_to_cv = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
+    R_robot = t3d_quat.quat2mat(q_wxyz_robot.astype(np.float64))
+    verts_robot_cam = (R_robot @ vertices_obj.T).T + t_cam_robot.reshape(3)
+    verts_cv_cam = (R_robot_to_cv @ verts_robot_cam.T).T
+    mask = np.zeros((height, width), dtype=np.uint8)
+    for tri in faces:
+        pts = verts_cv_cam[tri]
+        Z = pts[:, 2]
+        if np.any(Z <= 1e-6):
+            continue
+        u, v = fx * (pts[:, 0] / Z) + cx, fy * (pts[:, 1] / Z) + cy
+        poly = np.stack([u, v], axis=1)
+        if np.any(~np.isfinite(poly)):
+            continue
+        cv2.fillConvexPoly(mask, np.round(poly).astype(np.int32), 255)
+    return mask
+
+
+def bbox_from_mask(mask: np.ndarray):
+    rows, cols = np.any(mask > 0, axis=1), np.any(mask > 0, axis=0)
+    if not (np.any(rows) and np.any(cols)):
+        return None
+    ymin, ymax = np.where(rows)[0][[0, -1]]
+    xmin, xmax = np.where(cols)[0][[0, -1]]
+    return [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)]
+
+
+# --- Main Simulation Logic ---
+def main(config: dict):
     np.set_printoptions(suppress=True, precision=3)
-    
-    env_cfg = cfg['env']
-    scene_cfg = cfg['scene']
-    sim_cfg = cfg['simulation']
-    output_cfg = cfg['output']
-    camera_cfg = cfg['camera']
+    env_cfg, scene_cfg, sim_cfg, out_cfg, cam_cfg, asset_cfg, light_cfg, distractor_cfg = (
+        config['env'], config['scene'], config['simulation'], config['output'],
+        config['camera'], config.get('custom_asset', {}), config.get('lighting', {}),
+        config.get('distractor_assets', [])
+    )
 
-    create_and_register_env(env_cfg['env_type'], camera_cfg['pose_p'], camera_cfg['pose_g'])
-    env_id = "UniversalManiSkillEnv-v1"
-
+    env_id = create_and_register_env(env_cfg['env_type'], cam_cfg['pose_p'], cam_cfg['pose_g'])
     env_kwargs = {
-        "robot_uids": env_cfg['robot_uids'],
+        "robot_uids": "none",
         "sensor_configs": {
-            "base_camera": {"width": camera_cfg['width'], "height": camera_cfg['height']}
+            "shader_pack": cam_cfg.get("shader_pack", "default"),
+            "base_camera": {"width": cam_cfg['width'], "height": cam_cfg['height']}
+        },
+        "custom_asset_config": asset_cfg,
+        "distractor_assets_config": distractor_cfg,
+        "lighting_config": light_cfg,
+        "sim_config": {
+            "control_freq": sim_cfg.get('control_freq', 30),
+            "sim_freq": sim_cfg.get('sim_freq', 300)
         }
     }
-    
     if env_cfg['env_type'] == "RoboCasa":
         env_kwargs.update(scene_cfg['robocasa_params'])
-    # ArchitecTHOR 和 ReplicaCAD 的 build_config_idxs 将在 reset 时传入
 
-    image_dir = Path(output_cfg['image_dir']) / env_cfg['env_type']
-    image_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = Path(out_cfg['output_dir']) / f"{env_cfg['env_type']}" / f"{asset_cfg.get('name', 'no_asset')}"
+    rgb_dir, modal_mask_dir, amodal_mask_dir = output_dir / "rgb", output_dir / "modal_mask", output_dir / "amodal_mask"
+    rgb_dir.mkdir(parents=True, exist_ok=True)
+    if out_cfg.get("save_annotations"):
+        modal_mask_dir.mkdir(parents=True, exist_ok=True)
+        amodal_mask_dir.mkdir(parents=True, exist_ok=True)
 
-    # 步骤 A: 通用初始化
-    env = gym.make(
-        env_id,
-        render_mode=output_cfg['render_mode'],
-        obs_mode=env_cfg['obs_mode'],
-        sim_backend=sim_cfg['sim_backend'],
-        **env_kwargs
-    )
+    env = gym.make(env_id, render_mode=out_cfg['render_mode'], obs_mode=env_cfg['obs_mode'], sim_backend=sim_cfg['sim_backend'], **env_kwargs)
     
-    print("-" * 50)
-    print(f"Running simulation for: {env_cfg['env_type']}")
-    
-    scene_to_load = None
+    print("-" * 50 + f"\nStarting Runner for: {env_cfg['env_type']}")
+    scene_idx = 0
     if env_cfg['env_type'] in ["ArchitecTHOR", "ReplicaCAD"]:
-        scene_builder = env.unwrapped.scene_builder
-        num_available_scenes = len(scene_builder.build_configs)
-        
-        if env_cfg['env_type'] == "ArchitecTHOR":
-            scene_to_load = scene_cfg['archithor_params']['build_config_idx']
-        else: # ReplicaCAD
-            scene_to_load = scene_cfg['replicacad_params']['build_config_idx']
+        num_scenes = len(env.unwrapped.scene_builder.build_configs)
+        scene_idx = scene_cfg[f"{env_cfg['env_type'].lower()}_params"]['build_config_idx']
+        print(f"Available scenes: {num_scenes}. Loading index: {scene_idx}")
+        if not (0 <= scene_idx < num_scenes):
+            scene_idx = 0
+            print(f"Warning: Scene index out of bounds. Defaulting to {scene_idx}.")
+    print(f"Saving outputs to: {output_dir.resolve()}\n" + "-" * 50)
 
-        print(f"Total available scenes for {env_cfg['env_type']}: {num_available_scenes}")
-        
-        if not (0 <= scene_to_load < num_available_scenes):
-            print(f"Warning: Configured scene index {scene_to_load} is out of bounds (0-{num_available_scenes-1}).")
-            scene_to_load = 0
-            print(f"Defaulting to scene index {scene_to_load}.")
+    obs, _ = env.reset(seed=sim_cfg['seed'], options=dict(reconfigure=True, build_config_idxs=[scene_idx]))
     
-    print(f"Saving images to: {image_dir.resolve()}")
-    print("-" * 50)
-
-    reset_options = dict(reconfigure=True)
-    if scene_to_load is not None:
-        reset_options['build_config_idxs'] = [scene_to_load]
-
-    obs, _ = env.reset(seed=sim_cfg['seed'], options=reset_options)
+    cam_sensor = env.unwrapped._sensors['base_camera']
+    initial_cam_pose = cam_sensor.camera.get_local_pose()
+    cam_motion_cfg = cam_cfg.get("motion", {"type": "static"})
+    cam_motion_func = CAMERA_MOTION_PATTERNS.get(cam_motion_cfg.get("type", "static"), CAMERA_MOTION_PATTERNS["static"])
     
+    asset_actor = env.unwrapped.custom_actor if asset_cfg.get("enable") and hasattr(env.unwrapped, "custom_actor") else None
+    asset_id = asset_actor.per_scene_id.item() if asset_actor else None
+    
+    all_frames, intrinsic_matrix = [], cam_sensor.camera.get_intrinsic_matrix().cpu().numpy()[0]
+    fx, fy, cx, cy = intrinsic_matrix[0, 0], intrinsic_matrix[1, 1], intrinsic_matrix[0, 2], intrinsic_matrix[1, 2]
+    
+    amodal_verts, amodal_faces = None, None
+    if out_cfg.get("save_annotations") and asset_cfg.get("enable"):
+        amodal_verts, amodal_faces = load_mesh_vertices_faces(asset_cfg["visual_filepath"])
+
     try:
         for step in range(sim_cfg['num_steps']):
-            action = env.action_space.sample() if env.action_space is not None else None
-            obs, reward, terminated, truncated, info = env.step(action)
-            if "sensor_data" in obs and "base_camera" in obs["sensor_data"] and "Color" in obs["sensor_data"]["base_camera"]:
-                rgb_tensor = obs["sensor_data"]["base_camera"]["Color"]
-                image_data = rgb_tensor.squeeze(0).cpu().numpy()
-                Image.fromarray(image_data).save(image_dir / f"step_{step:04d}.png")
+            cam_motion_func(step, cam_sensor, initial_cam_pose, cam_motion_cfg)
+            action = env.action_space.sample() if env.action_space else None
+            obs, *_ = env.step(action)
+            
+            sensor_data = obs.get("sensor_data", {}).get("base_camera", {})
+            if "Color" not in sensor_data:
+                continue
+            
+            rgb_tensor = sensor_data["Color"].squeeze(0).cpu().numpy()
+            img_to_save = (rgb_tensor[...,:3] * 255).astype(np.uint8) if rgb_tensor.dtype == np.float32 else rgb_tensor
+            Image.fromarray(img_to_save).save(rgb_dir / f"rgb_{step:04d}.png")
+
+            if out_cfg.get("save_annotations") and asset_id is not None and "Segmentation" in sensor_data:
+                modal_mask = (sensor_data["Segmentation"][..., 1] == asset_id).squeeze().cpu().numpy()
+                modal_bbox = bbox_from_mask(modal_mask)
+                
+                if modal_bbox: # Only proceed if the object is at least partially visible
+                    Image.fromarray((modal_mask * 255).astype(np.uint8)).save(modal_mask_dir / f"modal_mask_{step:04d}.png")
+                    
+                    pose_in_cam = (cam_sensor.camera.get_global_pose().inv() * asset_actor.pose)
+                    t_cam = pose_in_cam.p.cpu().numpy().flatten()
+                    q_cam_wxyz = pose_in_cam.q.cpu().numpy().flatten()
+                    
+                    amodal_mask, amodal_bbox = None, None
+                    if amodal_verts is not None:
+                        amodal_mask = rasterize_amodal_mask(amodal_verts, amodal_faces, t_cam, q_cam_wxyz, fx, fy, cx, cy, cam_cfg['width'], cam_cfg['height'])
+                        amodal_bbox = bbox_from_mask(amodal_mask)
+                    
+                    if amodal_bbox:
+                        Image.fromarray(amodal_mask).save(amodal_mask_dir / f"amodal_mask_{step:04d}.png")
+                        all_frames.append({
+                            "rgb_path": f"rgb/rgb_{step:04d}.png",
+                            "modal_mask_path": f"modal_mask/modal_mask_{step:04d}.png",
+                            "amodal_mask_path": f"amodal_mask/amodal_mask_{step:04d}.png",
+                            "bbox_modal_xywh": modal_bbox,
+                            "bbox_amodal_xywh": amodal_bbox,
+                            "class": asset_cfg.get("name"),
+                            "pose_in_camera": {"position": t_cam.tolist(), "orientation_wxyz": q_cam_wxyz.tolist()}
+                        })
+
             if (step + 1) % 50 == 0 or step == sim_cfg['num_steps'] - 1:
                 print(f"  ... simulating and saving frame {step+1}/{sim_cfg['num_steps']}")
     finally:
+        if out_cfg.get("save_annotations") and all_frames:
+            with open(output_dir / "annotations.json", 'w') as f:
+                json.dump({"camera_intrinsics": intrinsic_matrix.tolist(), "frames": all_frames}, f, indent=4)
+            print(f"Annotations saved to '{output_dir / 'annotations.json'}'.")
         env.close()
 
-    print("\nSimulation finished.")
-    print(f"Images saved successfully in '{image_dir}'.")
+    print(f"\nSimulation finished. Outputs saved in '{output_dir}'.")
 
+# Script Launcher
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="/home/chujie/Data/ESOT500syn/test/environment/config.yaml", help="Path to the YAML configuration file.")
+    parser = argparse.ArgumentParser(description="ESOT500syn: A Universal ManiSkill Scene Runner")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="/home/chujie/Data/ESOT500syn/test/environment/config.yaml",
+        help="Path to the YAML configuration file."
+    )
     args = parser.parse_args()
     try:
         with open(args.config, 'r') as f:
-            config_dict = yaml.safe_load(f)
+            config_from_yaml = yaml.safe_load(f)
     except FileNotFoundError:
-        print(f"Error: Configuration file not found at '{args.config}'")
+        print(f"Error: Config file not found at '{args.config}'")
         exit(1)
     except Exception as e:
         print(f"Error parsing YAML file: {e}")
         exit(1)
-    main(config_dict)
+    main(config_from_yaml)

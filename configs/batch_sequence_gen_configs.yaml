@@ -1,0 +1,105 @@
+﻿# ===================================================================
+# ESOT500syn: Generation Rules & Sampling Space (v3)
+# ===================================================================
+
+# --- 1. 场景采样规则 ---
+scene_sampling:
+  scene_id_ranges:
+    ArchitecTHOR: [0, 9]
+    ReplicaCAD: [0, 5]
+    RoboCasa: { layout_ids: [0, 9], style_ids: [0, 11] }
+
+# --- 2. 资产发现与运动分配 ---
+asset_sampling:
+  # ... (内容不变)
+  discovery_paths:
+    - "~/.maniskill/data/assets/mani_skill2_ycb/models"
+  target_motion_pool:
+    - { type: "oscillate_along_axis", params: { amplitude: [0.3, 0.7], speed: [0.05, 0.15] } }
+    - { type: "spin_in_place", params: { speed: [0.05, 0.2] } }
+    - { type: "tumble", params: { spin_speeds: [[0.02, 0.01, 0.03], [0.1, 0.08, 0.12]] } }
+    - { type: "circular_xy", params: { radius: [0.4, 1.0], speed: [0.08, 0.2] } }
+    - { type: "random_walk_xy" }
+    - { type: "drunkards_walk_3d" }
+  distractor_motion_pool:
+    - { type: "static" }
+    - { type: "spin_in_place", params: { speed: [0.02, 0.08] } }
+    - { type: "random_walk_xy", params: { speed: [0.005, 0.02], turn_rate: [0.05, 0.2] } }
+  num_distractors_range: [0, 3]
+  local_spawn_box:
+    target:   { min: [-0.4, 0.1, 1.0], max: [0.4, 0.5, 2.5] }
+    distractor: { min: [-1.0, -0.2, 1.5], max: [1.0, 0.6, 3.5] }
+
+# --- 3. 相机位姿与运动 ---
+camera_setup:
+  poses_by_scene:
+    ArchitecTHOR:
+      0: { pose_p: [0, 0, 2], pose_g: [-3, 2, 0]}
+      1: { pose_p: [0, -1, 2], pose_g: [-11, 2, -3]}
+      2: { pose_p: [-2, -0.5, 1.5], pose_g: [-3, 2, 0]}
+      3: { pose_p: [-4, 1, 1.5], pose_g: [-3, 3, 0.5]}
+      4: { pose_p: [-1, -1, 2], pose_g: [-2, -2, 0]}
+      5: { pose_p: [-0.5, -1, 1.7], pose_g: [-2, 2, 0.2]}
+      6: { pose_p: [-0.5, -1, 1.7], pose_g: [-7, 2, 0.2]}
+      7: { pose_p: [-0.5, -1, 1.7], pose_g: [-7, 2, 0.2]}
+      8: { pose_p: [2.5, -1, 1.7], pose_g: [-7, 2, 0]}
+      9: { pose_p: [2.5, -0.5, 1.7], pose_g: [2, 2, 0]}
+
+    ReplicaCAD:
+      0: { pose_p: [0, -3, 2], pose_g: [0, 0, 1]}
+      1: { pose_p: [2, -2.5, 2], pose_g: [-2, -2.5, 0.5]}
+      2: { pose_p: [-1.5, -3, 2], pose_g: [0, 3, 1]}
+      3: { pose_p: [2, 0, 2], pose_g: [1, -3, 0.5]}
+      4: { pose_p: [0, 0, 2], pose_g: [3, -3, 0.5]}
+      5: { pose_p: [-1.5, 0, 2], pose_g: [4, -3, 0]}
+
+    RoboCasa:
+      "layout0_style0": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style1": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style2": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style3": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style4": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style5": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style6": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style7": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style8": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style9": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style10": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style11": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      
+      "layout0_style0": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style1": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style2": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style3": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style4": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style5": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style6": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style7": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style8": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style9": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style10": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+      "layout0_style11": {pose_p: [4.5, -4.5, 3], pose_g: [2, -2, 0]}
+
+  random_sampling:
+    position_box: { min: [-2, 1, 1.2], max: [2, 3, 2.5] }
+    target_box: { min: [-1, 2, 0.8], max: [1, 4, 1.2] }
+
+  motion_pool:
+    - { type: "static" }
+    - { type: "pan", params: { amplitude: [0.1, 0.3], speed: [0.01, 0.03] } }
+    - { type: "tilt", params: { amplitude: [0.1, 0.2], speed: [0.01, 0.02] } }
+    - { type: "gentle_drift" }
+
+# --- 4. 连续值采样规则 (光照) ---
+continuous_sampling:
+  # ... (内容不变)
+  lighting:
+    ambient_range: [[0.05, 0.05, 0.05], [0.6, 0.6, 0.6]]
+    point_lights:
+      num_lights_range: [1, 4]
+      position_box: { min: [-3, -3, 1], max: [3, 3, 3] }
+      color_range: { min: [0.7, 0.7, 0.7], max: [1.0, 1.0, 1.0] }
+    directional_light:
+      direction_box: { min: [-1, -1, -1], max: [1, 1, 0] } 
+      color_range: { min: [0.5, 0.5, 0.5], max: [1.0, 1.0, 1.0] }
+      shadow_probability: 0.5

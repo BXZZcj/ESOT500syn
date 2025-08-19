@@ -1,0 +1,25 @@
+﻿batch_settings:
+  master_seed: 43
+  num_sequences: 2
+  start_index: 0
+
+env:
+  robot_uids: "none"
+  obs_mode: "sensor_data"
+
+simulation:
+  sim_backend: "cpu"
+  num_steps: 10
+  # <<<--- seed 将由主脚本动态注入，这里不再需要 ---
+  control_freq: 20
+  sim_freq: 100
+
+output:
+  output_dir: "output/ESOT500syn_dataset"
+  render_mode: "rgb_array"
+  save_annotations: true
+
+camera:
+  width: 1280
+  height: 720
+  shader_pack: "rt-fast"

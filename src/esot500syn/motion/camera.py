@@ -1,8 +1,8 @@
-﻿# src/esot500syn/motion/camera.py
-import numpy as np
+﻿import numpy as np
 import sapien
 import transforms3d.euler as t3d_euler
 import transforms3d.quaternions as t3d_quat
+import transforms3d.axangles as t3d_axangles
 from typing import Dict, Callable
 
 CAMERA_MOTION_PATTERNS: Dict[str, Callable] = {}
@@ -13,20 +13,113 @@ def register_camera_motion(name: str):
         return func
     return decorator
 
-@register_camera_motion("static")
-def camera_motion_static(step, sensor, initial_pose, cfg):
-    pass
+# --- (所有函数签名都增加了 env 参数) ---
 
-@register_camera_motion("shake")
-def camera_motion_shake(step, sensor, initial_pose, cfg):
+@register_camera_motion("static")
+def camera_motion_static(step, env, sensor, initial_pose, cfg):
+    return initial_pose
+
+@register_camera_motion("pan")
+def camera_motion_pan(step, env, sensor, initial_pose, cfg):
     params = cfg.get("params", {})
-    pos_amp, rot_amp = params.get("pos_amp", 0.05), params.get("rot_amp", 0.05)
-    time = float(step)
-    pos_offset = np.array([pos_amp * np.sin(time * 0.2), pos_amp * np.cos(time * 0.35), 0])
-    rot_offset_q = t3d_euler.euler2quat(0, rot_amp * np.cos(time * 0.15), rot_amp * np.sin(time * 0.4), 'sxyz')
-    initial_q_flat = np.array(initial_pose.q).flatten()
-    new_q = t3d_quat.qmult(initial_q_flat, rot_offset_q)
-    new_p_tensor = initial_pose.p + pos_offset
-    final_p = new_p_tensor.cpu().numpy().flatten().astype(np.float32)
-    final_q = np.array(new_q).flatten().astype(np.float32)
-    sensor.camera.set_local_pose(sapien.Pose(p=final_p, q=final_q))
+    amplitude = params.get("amplitude", np.pi / 12)
+    speed = params.get("speed", 0.02)
+    up_axis = initial_pose.to_transformation_matrix()[:3, 2]
+    angle = amplitude * np.sin(step * speed)
+    
+    delta_q = t3d_quat.axangle2quat(up_axis, angle, is_normalized=True)
+    new_q = t3d_quat.qmult(initial_pose.q, delta_q)
+    return sapien.Pose(p=initial_pose.p, q=new_q)
+
+@register_camera_motion("tilt")
+def camera_motion_tilt(step, env, sensor, initial_pose, cfg):
+    params = cfg.get("params", {})
+    amplitude = params.get("amplitude", np.pi / 18)
+    speed = params.get("speed", 0.03)
+    right_axis = initial_pose.to_transformation_matrix()[:3, 1]
+    angle = amplitude * np.sin(step * speed)
+
+    delta_q = t3d_quat.axangle2quat(right_axis, angle, is_normalized=True)
+    new_q = t3d_quat.qmult(initial_pose.q, delta_q)
+    return sapien.Pose(p=initial_pose.p, q=new_q)
+
+@register_camera_motion("dolly")
+def camera_motion_dolly(step, env, sensor, initial_pose, cfg):
+    params = cfg.get("params", {})
+    amplitude = params.get("amplitude", 0.2)
+    speed = params.get("speed", 0.02)
+    forward_axis = initial_pose.to_transformation_matrix()[:3, 0]
+    offset = forward_axis * amplitude * np.sin(step * speed)
+    new_p = np.array(initial_pose.p) + offset
+    return sapien.Pose(p=new_p, q=initial_pose.q)
+
+@register_camera_motion("breathing")
+def camera_motion_breathing(step, env, sensor, initial_pose, cfg):
+    params = cfg.get("params", {})
+    pos_amp, rot_amp, speed = params.get("pos_amp", 0.005), params.get("rot_amp", 0.002), params.get("speed", 0.04)
+    pos_offset = np.array([0, 0, pos_amp * np.sin(step * speed)])
+    rot_offset_q = t3d_euler.euler2quat(rot_amp * np.sin(step * speed * 0.7), 0, 0, 'sxyz')
+    new_p = np.array(initial_pose.p) + pos_offset
+    new_q = t3d_quat.qmult(initial_pose.q, rot_offset_q)
+    return sapien.Pose(p=new_p, q=new_q)
+
+@register_camera_motion("gentle_drift")
+def camera_motion_gentle_drift(step, env, sensor, initial_pose, cfg):
+    if not hasattr(sensor, '_gentle_drift_state'):
+        rng = env.unwrapped._episode_rng
+        sensor._gentle_drift_state = {
+            "pos_velocity": rng.randn(3), "rot_velocity": rng.randn(3),
+            "current_pos_offset": np.zeros(3), "current_rot_offset_euler": np.zeros(3)
+        }
+    
+    state = sensor._gentle_drift_state
+    params = cfg.get("params", {})
+    max_p, max_r, turn_rate = params.get("max_pos_offset", 0.03), params.get("max_rot_offset", 0.01), params.get("turn_rate", 0.01)
+    rng = env.unwrapped._episode_rng
+
+    state["pos_velocity"] = (state["pos_velocity"] + rng.randn(3) * turn_rate)
+    state["pos_velocity"] /= np.linalg.norm(state["pos_velocity"])
+    state["rot_velocity"] = (state["rot_velocity"] + rng.randn(3) * turn_rate)
+    state["rot_velocity"] /= np.linalg.norm(state["rot_velocity"])
+    
+    state["current_pos_offset"] += state["pos_velocity"] * 0.001
+    state["current_rot_offset_euler"] += state["rot_velocity"] * 0.0005
+    pos_offset = np.tanh(state["current_pos_offset"]) * max_p
+    rot_offset_euler = np.tanh(state["current_rot_offset_euler"]) * max_r
+    
+    new_p = np.array(initial_pose.p) + pos_offset
+    delta_q = t3d_euler.euler2quat(*rot_offset_euler, 'sxyz')
+    new_q = t3d_quat.qmult(initial_pose.q, delta_q)
+    return sapien.Pose(p=new_p, q=new_q)
+
+def _apply_final_pose(step, env, sensor, initial_pose, cfg):
+    motion_type = cfg.get("type", "static")
+    motion_func = CAMERA_MOTION_PATTERNS.get(motion_type, camera_motion_static)
+    final_pose = motion_func(step, env, sensor, initial_pose, cfg)
+    if final_pose:
+        sensor.camera.set_local_pose(final_pose)
+
+@register_camera_motion("composite")
+def camera_motion_composite(step, env, sensor, initial_pose, cfg):
+    sub_patterns = cfg.get("params", [])
+    if not sub_patterns: return initial_pose
+
+    start_p_np, accumulated_p_offset, accumulated_q = np.array(initial_pose.p), np.zeros(3), np.array(initial_pose.q)
+
+    for sub_cfg in sub_patterns:
+        sub_motion_type = sub_cfg.get("type")
+        if not sub_motion_type: continue
+        sub_motion_func = CAMERA_MOTION_PATTERNS.get(sub_motion_type)
+        if not sub_motion_func:
+            print(f"Warning: Composite camera motion could not find sub-pattern '{sub_motion_type}'.")
+            continue
+        sub_pose = sub_motion_func(step, env, sensor, initial_pose, sub_cfg)
+        if sub_pose is None: continue
+
+        p_offset = np.array(sub_pose.p) - start_p_np
+        accumulated_p_offset += p_offset
+        delta_q = t3d_quat.qmult(sub_pose.q, initial_pose.inv().q)
+        accumulated_q = t3d_quat.qmult(delta_q, accumulated_q)
+
+    final_p, final_q = start_p_np + accumulated_p_offset, accumulated_q
+    return sapien.Pose(p=final_p.tolist(), q=final_q.tolist())

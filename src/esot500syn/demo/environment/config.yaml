@@ -1,36 +1,83 @@
-﻿# config.yaml (无需改动)
+﻿# ===================================================================
+# ESOT500syn Project: Universal Scene Runner Configuration (with Distractors)
+# ===================================================================
+
 env:
-  env_type: "ArchitecTHOR" # ArchitecTHOR, ReplicaCAD, RoboCasa
+  env_type: "ReplicaCAD" # ArchitecTHOR, ReplicaCAD, RoboCasa
   robot_uids: "none"
   obs_mode: "sensor_data"
 
 scene:
-  robocasa_params:
-    layout_ids: -1 # 0-9
-    style_ids: -1 # 0-11
-  archithor_params:
-    build_config_idx: 3 # 0-9
-  replicacad_params:
-    build_config_idx: 15 # 0-5
+  robocasa_params: {layout_ids: -1, style_ids: -1}
+  architecthor_params: {build_config_idx: 3}
+  replicacad_params: {build_config_idx: 15}
 
 simulation:
-  sim_backend: "gpu"
-  num_steps: 1
+  sim_backend: "cpu"
+  num_steps: 150
   seed: 42
+  control_freq: 20
+  sim_freq: 100
 
 output:
-  image_dir: "images/my_universal_runs"
-  render_mode: null
+  output_dir: "images/esot500syn_runs_with_distractors"
+  render_mode: "rgb_array"
+  save_annotations: true
+
+lighting:
+  ambient: [0.3, 0.3, 0.3]
+  point_lights:
+    - { position: [-1.0,  3.0,  2.2], color: [1, 1, 1] }
+    - { position: [ 0.5,  1.5,  2.2], color: [1, 1, 1] }
+    - { position: [ 1.5, -0.5,  2.2], color: [1, 1, 1] }
+  directional_light:
+    direction: [0.2, -0.6, -1.0]
+    color: [0.6, 0.6, 0.6]
+    shadow: false
 
 camera:
   width: 512
   height: 512
   # Suitable for ArchitecTHOR
-  pose_p: [-1, 1.5, 1.5]
-  pose_g: [-1, 3.0, 1.0]
+  # pose_p: [-1, 1.5, 1.5]
+  # pose_g: [-1, 3.0, 1.0]
   # Suitable for ReplicaCAD
-  # pose_p: [0, -3, 2]
-  # pose_g: [0, 0, 1]
+  pose_p: [0, -3, 2]
+  pose_g: [0, 0, 1]
   # Suitable for RoboCasa
   # pose_p: [3, -5.5, 3]
   # pose_g: [3.0, -2, 0.]
+  shader_pack: "rt-fast"
+  motion:
+    type: "shake"
+    params:
+      pos_amp: 0.05
+      rot_amp: 0.05
+
+# This is the PRIMARY asset that will be tracked and annotated
+custom_asset:
+  enable: true
+  name: "cracker_box"
+  visual_filepath: "~/.maniskill/data/assets/mani_skill2_ycb/models/003_cracker_box/textured.obj"
+  collision_filepath: "~/.maniskill/data/assets/mani_skill2_ycb/models/003_cracker_box/collision.ply"
+  initial_pose_p: [0, 0, 1]
+  motion_mode: "oscillate_z"
+
+# --- NEW: Add a list of distractor objects to the scene ---
+distractor_assets:
+  - enable: true
+    name: "distractor_banana"
+    visual_filepath: "~/.maniskill/data/assets/mani_skill2_ycb/models/011_banana/textured.obj"
+    collision_filepath: "~/.maniskill/data/assets/mani_skill2_ycb/models/011_banana/collision.ply"
+    initial_pose_p: [0.5, 0.2, 0.8]
+    motion_mode: "circular_xy"
+    motion_params:
+      radius: 0.3
+      speed: 0.15
+
+  - enable: true
+    name: "distractor_mug"
+    visual_filepath: "~/.maniskill/data/assets/mani_skill2_ycb/models/025_mug/textured.obj"
+    collision_filepath: "~/.maniskill/data/assets/mani_skill2_ycb/models/025_mug/collision.ply"
+    initial_pose_p: [0.0, -0.8, 1.2]
+    motion_mode: "static"

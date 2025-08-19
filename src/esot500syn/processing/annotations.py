@@ -1,5 +1,4 @@
-﻿# src/esot500syn/processing/annotations.py
-import os
+﻿import os
 import numpy as np
 import trimesh
 import cv2
@@ -23,10 +22,8 @@ def rasterize_amodal_mask(vertices_obj, faces, t_cam_robot, q_wxyz_robot, fx, fy
     verts_cv_cam = (R_robot_to_cv @ verts_robot_cam.T).T
     mask = np.zeros((height, width), dtype=np.uint8)
     for tri in faces:
-        # <<<--- 修正：将错误的一行代码拆分为正确的两行 ---
         pts = verts_cv_cam[tri]
         Z = pts[:, 2]
-        # --- 修正结束 ---
 
         if np.any(Z <= 1e-6):
             continue

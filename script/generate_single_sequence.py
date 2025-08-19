@@ -1,5 +1,4 @@
-﻿# scripts/generate_data.py
-import argparse
+﻿import argparse
 import yaml
 import sys
 from pathlib import Path
