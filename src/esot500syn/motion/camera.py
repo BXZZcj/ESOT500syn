@@ -13,8 +13,6 @@ def register_camera_motion(name: str):
         return func
     return decorator
 
-# --- (所有函数签名都增加了 env 参数) ---
-
 @register_camera_motion("static")
 def camera_motion_static(step, env, sensor, initial_pose, cfg):
     return initial_pose

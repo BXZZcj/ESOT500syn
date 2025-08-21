@@ -1,20 +1,16 @@
-﻿# ===================================================================
-# ESOT500syn Project: Universal Scene Runner Configuration (with Distractors)
-# ===================================================================
-
-env:
-  env_type: "ReplicaCAD" # ArchitecTHOR, ReplicaCAD, RoboCasa
+﻿env:
+  env_type: "RoboCasa"
   robot_uids: "none"
   obs_mode: "sensor_data"
 
 scene:
-  robocasa_params: {layout_ids: -1, style_ids: -1}
+  robocasa_params: {layout_ids: 3, style_ids: 2}
   architecthor_params: {build_config_idx: 3}
   replicacad_params: {build_config_idx: 15}
 
 simulation:
   sim_backend: "cpu"
-  num_steps: 150
+  num_steps: 1
   seed: 42
   control_freq: 20
   sim_freq: 100
@@ -28,8 +24,6 @@ lighting:
   ambient: [0.3, 0.3, 0.3]
   point_lights:
     - { position: [-1.0,  3.0,  2.2], color: [1, 1, 1] }
-    - { position: [ 0.5,  1.5,  2.2], color: [1, 1, 1] }
-    - { position: [ 1.5, -0.5,  2.2], color: [1, 1, 1] }
   directional_light:
     direction: [0.2, -0.6, -1.0]
     color: [0.6, 0.6, 0.6]
@@ -38,23 +32,11 @@ lighting:
 camera:
   width: 512
   height: 512
-  # Suitable for ArchitecTHOR
-  # pose_p: [-1, 1.5, 1.5]
-  # pose_g: [-1, 3.0, 1.0]
-  # Suitable for ReplicaCAD
-  pose_p: [0, -3, 2]
-  pose_g: [0, 0, 1]
-  # Suitable for RoboCasa
-  # pose_p: [3, -5.5, 3]
-  # pose_g: [3.0, -2, 0.]
+  pose_p: [4.5, -4.5, 3]
+  pose_g: [2, -2, 0]
   shader_pack: "rt-fast"
-  motion:
-    type: "shake"
-    params:
-      pos_amp: 0.05
-      rot_amp: 0.05
+  motion: { type: "static" }
 
-# This is the PRIMARY asset that will be tracked and annotated
 custom_asset:
   enable: true
   name: "cracker_box"
@@ -63,21 +45,10 @@ custom_asset:
   initial_pose_p: [0, 0, 1]
   motion_mode: "oscillate_z"
 
-# --- NEW: Add a list of distractor objects to the scene ---
 distractor_assets:
   - enable: true
     name: "distractor_banana"
     visual_filepath: "~/.maniskill/data/assets/mani_skill2_ycb/models/011_banana/textured.obj"
     collision_filepath: "~/.maniskill/data/assets/mani_skill2_ycb/models/011_banana/collision.ply"
     initial_pose_p: [0.5, 0.2, 0.8]
-    motion_mode: "circular_xy"
-    motion_params:
-      radius: 0.3
-      speed: 0.15
-
-  - enable: true
-    name: "distractor_mug"
-    visual_filepath: "~/.maniskill/data/assets/mani_skill2_ycb/models/025_mug/textured.obj"
-    collision_filepath: "~/.maniskill/data/assets/mani_skill2_ycb/models/025_mug/collision.ply"
-    initial_pose_p: [0.0, -0.8, 1.2]
     motion_mode: "static"

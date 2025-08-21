@@ -1,0 +1,218 @@
+﻿# --- 1. Scene Sampling Rules ---
+scene_sampling:
+  scene_id_ranges:
+    ArchitecTHOR: [0, 9]
+    ReplicaCAD: [0, 5]
+    RoboCasa: { layout_ids: [0, 9], style_ids: [0, 11] }
+
+# --- 2. Asset Discovery and Motion Assignment ---
+asset_sampling:
+  discovery_paths:
+    - "~/.maniskill/data/assets/mani_skill2_ycb/models"
+  
+  target_motion_pool:
+    - { type: "oscillate_along_axis", params: { amplitude: [0.6, 1.2], speed: [0.1, 0.25] } }
+    - { type: "spin_in_place", params: { speed: [0.15, 0.4] } }
+    - { type: "tumble", params: { spin_speeds: [[0.08, 0.08, 0.1], [0.2, 0.2, 0.25]] } }
+    - { type: "circular_xy", params: { radius: [0.8, 1.5], speed: [0.15, 0.3] } }
+    - { type: "random_walk_xy", params: { speed: [0.01, 0.03] } }
+    - { type: "drunkards_walk_3d", params: { pos_speed: [0.01, 0.025], rot_speed: [0.1, 0.25] } }
+
+  distractor_motion_pool:
+    - { type: "static" }
+    - { type: "spin_in_place", params: { speed: [0.1, 0.3] } }
+    - { type: "random_walk_xy", params: { speed: [0.01, 0.025], turn_rate: [0.1, 0.3] } }
+    - { type: "oscillate_along_axis", params: { amplitude: [0.4, 0.8], speed: [0.08, 0.2] } }
+    - { type: "tumble", params: { spin_speeds: [[0.05, 0.05, 0.05], [0.15, 0.15, 0.15]] } }
+
+  num_distractors_range: [0, 6]
+  local_spawn_box:
+    target:
+      x_forward: [0.2, 1.5]
+      y_left:    [-0.5, 0.5]
+      z_up:      [-0.6, 0.6]
+    distractor:
+      x_forward: [0.2, 2.0]
+      y_left:    [-1.2, 1.2]
+      z_up:      [-0.8, 0.8]
+
+# --- 3. Camera Pose and Movement ---
+camera_setup:
+  poses_by_scene:
+    ArchitecTHOR:
+      0: { pose_p: [0, 0, 2], pose_g: [-3, 2, 0]}
+      1: { pose_p: [0, -1, 2], pose_g: [-11, 2, -3]}
+      2: { pose_p: [-2, -0.5, 1.5], pose_g: [-3, 2, 0]}
+      3: { pose_p: [-4, 1, 1.5], pose_g: [-3, 3, 0.5]}
+      4: { pose_p: [-1, -1, 2], pose_g: [-2, -2, 0]}
+      5: { pose_p: [-0.5, -1, 1.7], pose_g: [-2, 2, 0.2]}
+      6: { pose_p: [-0.5, -1, 1.7], pose_g: [-7, 2, 0.2]}
+      7: { pose_p: [-0.5, -1, 1.7], pose_g: [-7, 2, 0.2]}
+      8: { pose_p: [2.5, -1, 1.7], pose_g: [-7, 2, 0]}
+      9: { pose_p: [2.5, -0.5, 1.7], pose_g: [2, 2, 0]}
+
+    ReplicaCAD:
+      0: { pose_p: [0, -3, 2], pose_g: [0, 0, 1]}
+      1: { pose_p: [2, -2.5, 2], pose_g: [-2, -2.5, 0.5]}
+      2: { pose_p: [-1.5, -3, 2], pose_g: [0, 3, 1]}
+      3: { pose_p: [2, 0, 2], pose_g: [1, -3, 0.5]}
+      4: { pose_p: [0, 0, 2], pose_g: [3, -3, 0.5]}
+      5: { pose_p: [-1.5, 0, 2], pose_g: [4, -3, 0]}
+
+    RoboCasa:
+      "layout0_style0": { pose_p: [2, -3, 2], pose_g: [2, 0, 0]}
+      "layout0_style1": { pose_p: [2, -3, 2], pose_g: [2, 0, 0]}
+      "layout0_style2": { pose_p: [2, -3, 2], pose_g: [2, 0, 0]}
+      "layout0_style3": { pose_p: [2, -3, 2], pose_g: [2, 0, 0]}
+      "layout0_style4": { pose_p: [2, -3, 2], pose_g: [2, 0, 0]}
+      "layout0_style5": { pose_p: [2, -3, 2], pose_g: [2, 0, 0]}
+      "layout0_style6": { pose_p: [2, -3, 2], pose_g: [2, 0, 0]}
+      "layout0_style7": { pose_p: [2, -3, 2], pose_g: [2, 0, 0]}
+      "layout0_style8": { pose_p: [2, -3, 2], pose_g: [2, 0, 0]}
+      "layout0_style9": { pose_p: [2, -3, 2], pose_g: [2, 0, 0]}
+      "layout0_style10": { pose_p: [2, -3, 2], pose_g: [2, 0, 0]}
+      "layout0_style11": { pose_p: [2, -3, 2], pose_g: [2, 0, 0]}
+      
+      "layout1_style0": {pose_p: [4, -4, 2.5], pose_g: [2, 0, -1]}
+      "layout1_style1": {pose_p: [4, -4, 2.5], pose_g: [2, 0, -1]}
+      "layout1_style2": {pose_p: [4, -4, 2.5], pose_g: [2, 0, -1]}
+      "layout1_style3": {pose_p: [4, -4, 2.5], pose_g: [2, 0, -1]}
+      "layout1_style4": {pose_p: [4, -4, 2.5], pose_g: [2, 0, -1]}
+      "layout1_style5": {pose_p: [4, -4, 2.5], pose_g: [2, 0, -1]}
+      "layout1_style6": {pose_p: [4, -4, 2.5], pose_g: [2, 0, -1]}
+      "layout1_style7": {pose_p: [4, -4, 2.5], pose_g: [2, 0, -1]}
+      "layout1_style8": {pose_p: [4, -4, 2.5], pose_g: [2, 0, -1]}
+      "layout1_style9": {pose_p: [4, -4, 2.5], pose_g: [2, 0, -1]}
+      "layout1_style10": {pose_p: [4, -4, 2.5], pose_g: [2, 0, -1]}
+      "layout1_style11": {pose_p: [4, -4, 2.5], pose_g: [2, 0, -1]}
+      
+      "layout2_style0": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout2_style1": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout2_style2": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout2_style3": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout2_style4": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout2_style5": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout2_style6": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout2_style7": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout2_style8": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout2_style9": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout2_style10": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout2_style11": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      
+      "layout3_style0": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout3_style1": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout3_style2": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout3_style3": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout3_style4": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout3_style5": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout3_style6": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout3_style7": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout3_style8": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout3_style9": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout3_style10": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout3_style11": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      
+      "layout4_style0": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout4_style1": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout4_style2": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout4_style3": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout4_style4": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout4_style5": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout4_style6": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout4_style7": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout4_style8": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout4_style9": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout4_style10": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      "layout4_style11": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, -1, 0]}
+      
+      "layout5_style0": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, 0, 0]}
+      "layout5_style1": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, 0, 0]}
+      "layout5_style2": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, 0, 0]}
+      "layout5_style3": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, 0, 0]}
+      "layout5_style4": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, 0, 0]}
+      "layout5_style5": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, 0, 0]}
+      "layout5_style6": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, 0, 0]}
+      "layout5_style7": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, 0, 0]}
+      "layout5_style8": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, 0, 0]}
+      "layout5_style9": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, 0, 0]}
+      "layout5_style10": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, 0, 0]}
+      "layout5_style11": {pose_p: [1.2, -2.6, 2], pose_g: [3.5, 0, 0]}
+      
+      "layout6_style0": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, 0]}
+      "layout6_style1": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, 0]}
+      "layout6_style2": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, 0]}
+      "layout6_style3": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, 0]}
+      "layout6_style4": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, 0]}
+      "layout6_style5": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, 0]}
+      "layout6_style6": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, 0]}
+      "layout6_style7": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, 0]}
+      "layout6_style8": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, 0]}
+      "layout6_style9": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, 0]}
+      "layout6_style10": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, 0]}
+      "layout6_style11": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, 0]}
+
+      "layout7_style0": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, -1]}
+      "layout7_style1": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, -1]}
+      "layout7_style2": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, -1]}
+      "layout7_style3": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, -1]}
+      "layout7_style4": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, -1]}
+      "layout7_style5": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, -1]}
+      "layout7_style6": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, -1]}
+      "layout7_style7": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, -1]}
+      "layout7_style8": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, -1]}
+      "layout7_style9": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, -1]}
+      "layout7_style10": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, -1]}
+      "layout7_style11": {pose_p: [1.2, -2.6, 3], pose_g: [3, 0, -1]}
+      
+      "layout8_style0": {pose_p: [2.5, -3.2, 3], pose_g: [1.7, 0, -1]}
+      "layout8_style1": {pose_p: [2.5, -3.2, 3], pose_g: [1.7, 0, -1]}
+      "layout8_style2": {pose_p: [2.5, -3.2, 3], pose_g: [1.7, 0, -1]}
+      "layout8_style3": {pose_p: [2.5, -3.2, 3], pose_g: [1.7, 0, -1]}
+      "layout8_style4": {pose_p: [2.5, -3.2, 3], pose_g: [1.7, 0, -1]}
+      "layout8_style5": {pose_p: [2.5, -3.2, 3], pose_g: [1.7, 0, -1]}
+      "layout8_style6": {pose_p: [2.5, -3.2, 3], pose_g: [1.7, 0, -1]}
+      "layout8_style7": {pose_p: [2.5, -3.2, 3], pose_g: [1.7, 0, -1]}
+      "layout8_style8": {pose_p: [2.5, -3.2, 3], pose_g: [1.7, 0, -1]}
+      "layout8_style9": {pose_p: [2.5, -3.2, 3], pose_g: [1.7, 0, -1]}
+      "layout8_style10": {pose_p: [2.5, -3.2, 3], pose_g: [1.7, 0, -1]}
+      "layout8_style11": {pose_p: [2.5, -3.2, 3], pose_g: [1.7, 0, -1]}
+      
+      "layout9_style0": {pose_p: [1.6, -2.2, 3.3], pose_g: [3, 0.7, -2]}
+      "layout9_style1": {pose_p: [1.6, -2.2, 3.3], pose_g: [3, 0.7, -2]}
+      "layout9_style2": {pose_p: [1.6, -2.2, 3.3], pose_g: [3, 0.7, -2]}
+      "layout9_style3": {pose_p: [1.6, -2.2, 3.3], pose_g: [3, 0.7, -2]}
+      "layout9_style4": {pose_p: [1.6, -2.2, 3.3], pose_g: [3, 0.7, -2]}
+      "layout9_style5": {pose_p: [1.6, -2.2, 3.3], pose_g: [3, 0.7, -2]}
+      "layout9_style6": {pose_p: [1.6, -2.2, 3.3], pose_g: [3, 0.7, -2]}
+      "layout9_style7": {pose_p: [1.6, -2.2, 3.3], pose_g: [3, 0.7, -2]}
+      "layout9_style8": {pose_p: [1.6, -2.2, 3.3], pose_g: [3, 0.7, -2]}
+      "layout9_style9": {pose_p: [1.6, -2.2, 3.3], pose_g: [3, 0.7, -2]}
+      "layout9_style10": {pose_p: [1.6, -2.2, 3.3], pose_g: [3, 0.7, -2]}
+      "layout9_style11": {pose_p: [1.6, -2.2, 3.3], pose_g: [3, 0.7, -2]}  
+
+  random_sampling:
+    position_box: { min: [-2, 1, 1.2], max: [2, 3, 2.5] }
+    target_box: { min: [-1, 2, 0.8], max: [1, 4, 1.2] }
+
+  motion_pool:
+    # Increased weight for "static", now 3/5 = 60% chance to be static
+    - { type: "static" }
+    - { type: "static" }
+    - { type: "static" }
+    # Very gentle panning
+    - { type: "pan", params: { amplitude: [0.05, 0.15], speed: [0.005, 0.015] } }
+    # Very gentle random handheld motion
+    - { type: "gentle_drift", params: { max_pos_offset: 0.02, max_rot_offset: 0.01, turn_rate: 0.01 }}
+
+# --- 4. Continuous Value Sampling (Lighting) ---
+continuous_sampling:
+  # lighting:
+  #   ambient_range: [[0.05, 0.05, 0.05], [0.6, 0.6, 0.6]]
+  #   point_lights:
+  #     num_lights_range: [1, 4]
+  #     position_box: { min: [-3, -3, 1], max: [3, 3, 3] }
+  #     color_range: { min: [0.7, 0.7, 0.7], max: [1.0, 1.0, 1.0] }
+  #   directional_light:
+  #     direction_box: { min: [-1, -1, -1], max: [1, 1, 0] } 
+  #     color_range: { min: [0.5, 0.5, 0.5], max: [1.0, 1.0, 1.0] }
+  #     shadow_probability: 0.5

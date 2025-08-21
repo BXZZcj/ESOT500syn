@@ -7,7 +7,6 @@ from pathlib import Path
 from PIL import Image
 
 
-# ... All your imports and custom class definitions remain unchanged ...
 # (MyArchitecTHORSceneBuilder_NoRobot, CustomAblationEnv, etc.)
 from mani_skill.envs.scenes.base_env import SceneManipulationEnv
 from mani_skill.utils.registration import register_env

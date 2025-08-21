@@ -13,7 +13,7 @@ from mani_skill.envs.tasks.tabletop.push_cube import PushCubeEnv
 from mani_skill.utils.registration import register_env
 
 
-# ------------------- 1. Define your custom environment (same as before) -------------------
+# ------------------- 1. Define the custom environment (same as before) -------------------
 @register_env("CustomPushCube-v1", max_episode_steps=200)
 class CustomPushCubeEnv(PushCubeEnv):
     def __init__(self, *args, **kwargs):

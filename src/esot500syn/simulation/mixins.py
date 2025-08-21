@@ -1,6 +1,6 @@
 ﻿import os
 import sapien
-import numpy as np # <<<--- 添加 numpy 导入
+import numpy as np
 from pathlib import Path
 from typing import Dict
 
@@ -17,17 +17,16 @@ class CustomAssetMixin:
 
     def _get_pose_from_config(self, config: Dict) -> sapien.Pose:
         """
-        辅助函数，从配置字典中安全地构建一个sapien.Pose对象。
+        Helper function to safely build a sapien.Pose object from a configuration dictionary.
         """
         p_raw = config.get("initial_pose_p", [0, 0, 1])
         q_raw = config.get("initial_pose_q", [1, 0, 0, 0])
 
-        # <<<--- 关键修正：确保传入的是Numpy数组 ---
-        # 无论输入是 list, tuple, 还是 torch.Tensor, 都转换为 numpy array
+        # convert input to numpy array
         p = np.array(p_raw, dtype=np.float32).flatten()
         q = np.array(q_raw, dtype=np.float32).flatten()
 
-        # 添加一个检查确保维度正确
+        # add a check to ensure the dimension is correct
         if p.shape != (3,):
             raise ValueError(f"Pose position 'p' must have 3 elements, but got {p.shape}")
         if q.shape != (4,):

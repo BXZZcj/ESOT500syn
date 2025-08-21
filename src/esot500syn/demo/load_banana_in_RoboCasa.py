@@ -7,12 +7,10 @@ from pathlib import Path
 from PIL import Image
 
 
-# 导入基类
 from mani_skill.envs.tasks.mobile_manipulation.robocasa.kitchen import RoboCasaKitchenEnv
 from mani_skill.utils.registration import register_env
 
 
-# 您的自定义环境代码完全保持不变
 @register_env("AblationRoboCasaNoRobot-v1", max_episode_steps=50)
 class CustomAblationEnv(RoboCasaKitchenEnv):
     def __init__(self, *args, **kwargs):
@@ -58,18 +56,18 @@ def main():
     env_id = "AblationRoboCasaNoRobot-v1"
     render_mode = None 
     obs_mode = "sensor_data"
-    image_dir = "images/final_random_scenes_demo"  # 使用新的输出目录
+    image_dir = "images/final_random_scenes_demo"  # use new output directory
     Path(image_dir).mkdir(parents=True, exist_ok=True)
 
 
     sim_backend = "gpu" if torch.cuda.is_available() else "cpu"
-    print(f"使用的模拟后端: {sim_backend}")
-    print(f"以无头模式运行，图片将保存到 '{image_dir}'")
+    print(f"using simulation backend: {sim_backend}")
+    print(f"running in headless mode, images will be saved to '{image_dir}'")
     
-    # <--- 修改点 1：启用完整的场景随机化 ---
+    # <--- 1. enable full scene randomization ---
     env_kwargs = dict(
-        layout_ids=-1,  # 从所有布局中随机选择
-        style_ids=-1,   # 从所有风格中随机选择
+        layout_ids=-1,  # randomly select from all layouts
+        style_ids=-1,   # randomly select from all styles
         robot_uids="none",
         sensor_configs=dict(
             base_camera=dict(
@@ -88,32 +86,32 @@ def main():
         **env_kwargs
     )
     
-    print("观测空间", env.observation_space)
-    print("动作空间", env.action_space)
+    print("observation space", env.observation_space)
+    print("action space", env.action_space)
 
 
-    print("\n场景设置完成。开始对5个不同的场景进行模拟...")
+    print("\nscene setup completed. starting to simulate 5 different scenes...")
     
-    # <--- 修改点 2：调整循环结构以生成5个不同的场景 ---
-    # 外层循环控制 episodes（生成5个不同的场景）
+    # <--- 2. adjust the loop structure to generate 5 different scenes ---
+    # outer loop controls episodes (generating 5 different scenes)
     try:
         for i in range(5):
             print(f"\n--- 开始第 {i+1}/5 个 Episode ---")
             
-            # 每次重置时都强制重新构建一个随机的新场景
+            # forcefully rebuild a new random scene every time reset is called
             obs, _ = env.reset(seed=i, options=dict(reconfigure=True))
             
-            # 为每个 episode 的图片创建一个子文件夹，防止互相覆盖
+            # create a subfolder for each episode's images to prevent overlap
             episode_dir = Path(image_dir) / f"episode_{i}"
             episode_dir.mkdir(exist_ok=True)
 
 
-            # 内层循环控制单个 episode 内的步骤
+            # inner loop controls steps within a single episode
             for step in range(50):
                 action = None
                 obs, reward, terminated, truncated, info = env.step(action)
                 
-                # <--- 修改点 3：更新文件保存路径 ---
+                # <--- 3. update the file saving path ---
                 if "sensor_data" in obs:
                     if "base_camera" in obs["sensor_data"]:
                         if "Color" in obs["sensor_data"]["base_camera"]:
@@ -126,23 +124,23 @@ def main():
 
 
                             img = Image.fromarray(image_data)
-                            # 将图片保存到对应的 episode 子文件夹中
+                            # save the image to the corresponding episode subfolder
                             filepath = episode_dir / f"step_{step:04d}.png"
                             img.save(filepath)
 
 
                 if (step + 1) % 50 == 0:
-                    print(f"  ... 模拟并保存帧 {step+1}/50")
+                    print(f"  ... simulating and saving frame {step+1}/50")
             
-            print(f"Episode {i+1} 完成。图片已保存到 {episode_dir}")
+            print(f"Episode {i+1} completed. images saved to {episode_dir}")
 
 
     finally:
         env.close()
 
 
-    print("\n模拟结束。")
-    print(f"5个不同场景的图片已成功保存至 '{image_dir}'。")
+    print("\nsimulation completed.")
+    print(f"5 different scenes' images successfully saved to '{image_dir}'.")
 
 
 if __name__ == "__main__":

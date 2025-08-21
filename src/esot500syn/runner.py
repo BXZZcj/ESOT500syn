@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 from PIL import Image
 
-# Import from our own library
 from .simulation.environment import create_and_register_env
 from .motion.camera import _apply_final_pose
 from .processing.annotations import load_mesh_vertices_faces, rasterize_amodal_mask, bbox_from_mask
@@ -23,10 +22,7 @@ def run(config: dict):
         "robot_uids": "none",
         "sensor_configs": {
             "shader_pack": cam_cfg.get("shader_pack", "default"),
-            "base_camera": {
-                "width": cam_cfg['width'],
-                "height": cam_cfg['height']
-            }
+            "base_camera": {"width": cam_cfg['width'], "height": cam_cfg['height']}
         },
         "custom_asset_config": asset_cfg,
         "distractor_assets_config": distractor_cfg,
@@ -37,7 +33,7 @@ def run(config: dict):
         }
     }
     if env_cfg['env_type'] == "RoboCasa":
-        env_kwargs.update(scene_cfg['robocasa_params'])
+        env_kwargs["robocasa_params"] = scene_cfg.get('robocasa_params', {})
 
     output_dir = Path(out_cfg['output_dir']) / f"{env_cfg['env_type']}" / f"{asset_cfg.get('name', 'no_asset')}"
     rgb_dir = output_dir / "rgb"
@@ -71,7 +67,7 @@ def run(config: dict):
 
     cam_sensor = env.unwrapped._sensors['base_camera']
     
-    # <<<--- 关键修正：使用 .sp 获取原生的 sapien.Pose 对象 ---
+    # use .sp to get the native sapien.Pose object
     initial_cam_pose = cam_sensor.camera.get_local_pose().sp
     
     cam_motion_cfg = cam_cfg.get("motion", {"type": "static"})

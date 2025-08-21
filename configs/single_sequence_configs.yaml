@@ -4,14 +4,14 @@
   obs_mode: "sensor_data"
 
 scene:
-  robocasa_params: {layout_ids: -1, style_ids: -1} # layout_ids 0 to 9, style_ids 0 to 11
-  architecthor_params: {build_config_idx: 3} # 0 to 9
+  robocasa_params: {layout_ids: 9, style_ids: -1} # layout_ids 0 to 9, style_ids 0 to 11
+  architecthor_params: {build_config_idx: 4} # 0 to 9
   replicacad_params: {build_config_idx: 15} # 0 to 5
 
 simulation:
   sim_backend: "cpu"
-  num_steps: 50
-  seed: 42
+  num_steps: 1
+  seed: 43
   control_freq: 20
   sim_freq: 100
 
@@ -35,22 +35,23 @@ camera:
   width: 1280
   height: 720
   # Suitable for ArchitecTHOR
-  pose_p: [-1, 1.5, 1.5]
-  pose_g: [-1, 3.0, 1.0]
+  pose_p: [-1, -1, 2]
+  pose_g: [-2, -2, 0]
   # Suitable for ReplicaCAD
   # pose_p: [0, -3, 2]
   # pose_g: [0, 0, 1]
   # Suitable for RoboCasa
-  # pose_p: [3, -5.5, 3]
-  # pose_g: [3.0, -2, 0.]
+  # pose_p: [1.6, -2.2, 3.3]
+  # pose_g: [3, 0.7, -2]
   shader_pack: "rt-fast"
   
   motion:
     type: "gentle_drift"
     params:
-      max_pos_offset: 4   # 最大位置偏移 (米)
-      max_rot_offset: 2   # 最大角度偏移 (弧度, 约1.1度)
-      turn_rate: 0.015       # 晃动方向变化的平滑度
+      max_pos_offset: 4     # maximum position offset (meters)
+      max_rot_offset: 2     # maximum rotation offset (radians, about 1.1 degrees)
+      turn_rate: 0.015      # smoothness of drift direction change
+
 
 # This is the PRIMARY asset that will be tracked and annotated
 custom_asset:
@@ -73,7 +74,6 @@ custom_asset:
         height: 0.4
         duration: 80
 
-# --- NEW: Add a list of distractor objects to the scene ---
 distractor_assets:
   - enable: true
     name: "distractor_banana"

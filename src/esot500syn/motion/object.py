@@ -14,21 +14,21 @@ def register_motion_pattern(name: str):
     return decorator
 
 # ===================================================================
-# I. 平移运动模式 (Translational Patterns)
+# I. Translational Patterns
 # ===================================================================
 
 @register_motion_pattern("static")
 def motion_static(mixin, start_pose, config):
-    """物体保持静止。"""
+    """The object remains stationary."""
     pass
 
 @register_motion_pattern("oscillate_along_axis")
 def motion_oscillate_along_axis(mixin, start_pose, config):
     """
-    沿任意指定轴来回振荡。
-    - axis: 振荡轴的方向向量 [x, y, z]。
-    - amplitude: 振荡的幅度（半程距离）。
-    - speed: 振荡的速度。
+    Oscillate along an arbitrary axis.
+    - axis: The direction vector of the oscillation axis [x, y, z].
+    - amplitude: The amplitude of the oscillation (half-distance).
+    - speed: The speed of the oscillation.
     """
     params = config.get("motion_params", {})
     axis = np.array(params.get("axis", [1, 0, 0]))
@@ -44,10 +44,10 @@ def motion_oscillate_along_axis(mixin, start_pose, config):
 @register_motion_pattern("linear_patrol_with_stops")
 def motion_linear_patrol_with_stops(mixin, start_pose, config):
     """
-    在两点间来回巡逻，并在每个端点处有明显的停顿。
-    - target_p: 巡逻的目标点坐标 [x, y, z]。
-    - move_duration: 完成单程移动所需的时间步数。
-    - pause_duration: 在每个端点停顿的时间步数。
+    Patrol between two points, with a noticeable pause at each endpoint.
+    - target_p: The target point coordinates [x, y, z] for patrol.
+    - move_duration: The number of time steps required to complete a one-way move.
+    - pause_duration: The number of time steps for a pause at each endpoint.
     """
     params = config.get("motion_params", {})
     target_p = np.array(params.get("target_p", [1, 0, 1]))
@@ -74,9 +74,9 @@ def motion_linear_patrol_with_stops(mixin, start_pose, config):
 @register_motion_pattern("bouncing_z")
 def motion_bouncing_z(mixin, start_pose, config):
     """
-    模拟在Z轴上的弹跳运动，触及虚拟地面后反弹。
-    - height: 弹跳的最大高度。
-    - duration: 完成一次完整弹跳（下落+反弹）所需的时间步数。
+    Simulate bouncing motion along the Z-axis, bouncing off the virtual ground.
+    - height: The maximum height of the bounce.
+    - duration: The number of time steps required for a complete bounce (fall + bounce).
     """
     params = config.get("motion_params", {})
     height = params.get("height", 0.5)
@@ -89,11 +89,11 @@ def motion_bouncing_z(mixin, start_pose, config):
 @register_motion_pattern("lissajous_xy")
 def motion_lissajous_xy(mixin, start_pose, config):
     """
-    在XY平面上进行利萨茹曲线运动（8字形的泛化）。
-    - x_radius, y_radius: X和Y轴的振幅。
-    - x_freq, y_freq: X和Y轴的频率。
-    - speed: 总体运动速度。
-    - phase_shift: X和Y轴之间的相位差（弧度）。
+    Perform Lissajous curve motion (generalization of figure-8) on the XY plane.
+    - x_radius, y_radius: The amplitudes of the X and Y axes.
+    - x_freq, y_freq: The frequencies of the X and Y axes.
+    - speed: The overall motion speed.
+    - phase_shift: The phase difference between the X and Y axes (in radians).
     """
     params = config.get("motion_params", {})
     x_radius, y_radius = params.get("x_radius", 0.5), params.get("y_radius", 0.5)
@@ -107,7 +107,7 @@ def motion_lissajous_xy(mixin, start_pose, config):
     return sapien.Pose(p=[new_x, new_y, start_p[2]])
 
 # ===================================================================
-# II. 旋转运动模式 (Rotational Patterns)
+# II. Rotational Patterns
 # ===================================================================
 
 @register_motion_pattern("spin_in_place")
@@ -147,7 +147,7 @@ def motion_tumble(mixin, start_pose, config):
     return sapien.Pose(p=start_pose.p, q=new_q)
 
 # ===================================================================
-# III. 复合运动模式 (Compound Patterns) - Basic
+# III. Compound Patterns - Basic
 # ===================================================================
 
 @register_motion_pattern("circular_xy")
@@ -214,7 +214,7 @@ def motion_path_following_with_roll(mixin, start_pose, config):
     return sapien.Pose(p=p_current.tolist(), q=final_q)
 
 # ===================================================================
-# IV. 随机运动模式 (Stochastic Patterns)
+# IV. Stochastic Patterns
 # ===================================================================
 
 @register_motion_pattern("randomized_circular_xy")
@@ -278,7 +278,7 @@ def motion_drunkards_walk_3d(mixin, start_pose, config):
     return state["current_pose"]
 
 # ===================================================================
-# V. 元运动模式 (Meta Patterns) - 用于组合其他模式
+# V. Meta Patterns - Used to combine other patterns
 # ===================================================================
 
 @register_motion_pattern("composite")
