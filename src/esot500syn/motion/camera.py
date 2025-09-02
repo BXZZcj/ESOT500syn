@@ -100,24 +100,38 @@ def _apply_final_pose(step, env, sensor, initial_pose, cfg):
 @register_camera_motion("composite")
 def camera_motion_composite(step, env, sensor, initial_pose, cfg):
     sub_patterns = cfg.get("params", [])
-    if not sub_patterns: return initial_pose
-
-    start_p_np, accumulated_p_offset, accumulated_q = np.array(initial_pose.p), np.zeros(3), np.array(initial_pose.q)
-
+    if not sub_patterns:
+        return initial_pose
+    start_p_np = np.array(initial_pose.p)
+    accumulated_p_offset = np.zeros(3)
+    
+    # Accumulate total rotation increment starting from the identity quaternion
+    accumulated_q_delta = np.array([1.0, 0.0, 0.0, 0.0])  # w, x, y, z
     for sub_cfg in sub_patterns:
         sub_motion_type = sub_cfg.get("type")
-        if not sub_motion_type: continue
+        if not sub_motion_type:
+            continue
+            
         sub_motion_func = CAMERA_MOTION_PATTERNS.get(sub_motion_type)
         if not sub_motion_func:
             print(f"Warning: Composite camera motion could not find sub-pattern '{sub_motion_type}'.")
             continue
+            
+        # Camera sub-patterns can directly use sub_cfg, as naming conventions are consistent
         sub_pose = sub_motion_func(step, env, sensor, initial_pose, sub_cfg)
-        if sub_pose is None: continue
-
+        
+        if sub_pose is None:
+            continue
+        # Calculate translation offset and accumulate
         p_offset = np.array(sub_pose.p) - start_p_np
         accumulated_p_offset += p_offset
-        delta_q = t3d_quat.qmult(sub_pose.q, initial_pose.inv().q)
-        accumulated_q = t3d_quat.qmult(delta_q, accumulated_q)
-
-    final_p, final_q = start_p_np + accumulated_p_offset, accumulated_q
+        # Calculate rotation increment and accumulate
+        q_delta = t3d_quat.qmult(np.array(sub_pose.q), t3d_quat.qinverse(initial_pose.q))
+        accumulated_q_delta = t3d_quat.qmult(q_delta, accumulated_q_delta)
+    # Apply accumulated translation offset to the start position
+    final_p = start_p_np + accumulated_p_offset
+    
+    # Apply accumulated rotation increment to the start rotation
+    final_q = t3d_quat.qmult(accumulated_q_delta, initial_pose.q)
+    
     return sapien.Pose(p=final_p.tolist(), q=final_q.tolist())

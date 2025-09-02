@@ -12,7 +12,7 @@ from esot500syn.runner import run
 
 def main():
     parser = argparse.ArgumentParser(description="ESOT500syn: Data Generation Pipeline")
-    parser.add_argument("--config", type=str, default="/home/chujie/Data/ESOT500syn/configs/single_sequence_configs.yaml", help="Path to the YAML configuration file.")
+    parser.add_argument("--config", type=str, default="/home/chujie/Data/ESOT500syn/configs/debug_single_sequence_configs.yaml", help="Path to the YAML configuration file.")
     args = parser.parse_args()
 
     try:

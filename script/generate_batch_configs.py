@@ -58,8 +58,12 @@ def sample_from_box(box):
     ]
 
 def randomize_motion_params(params_config):
+    if isinstance(params_config, list):
+        return [randomize_motion_params(p) for p in params_config]
+
     if not isinstance(params_config, dict):
         return params_config
+
     randomized_params = {}
     for key, value in params_config.items():
         if (
@@ -264,6 +268,7 @@ def generate_randomized_config(
             'motion_params': distractor_motion_params
         })
 
+    # 4. lighting
     if gen_config.get('continuous_sampling') and 'lighting' in gen_config['continuous_sampling']:
         light_rules = gen_config['continuous_sampling']['lighting']
         lighting = {
@@ -286,6 +291,22 @@ def generate_randomized_config(
     else:
         new_config['lighting'] = base_config.get('lighting', {})
 
+    
+    # 5. Add an extra point light for ArchitecTHOR scenes at the camera's position
+    if scene_type == "ArchitecTHOR":
+        # Create the new light. The position is the camera position determined earlier.
+        new_light = {
+            'position': cam_pose_p,
+            'color': [1, 1, 1]
+        }
+        
+        # Safely add the new light to the point_lights list, ensuring it exists first.
+        if 'point_lights' not in new_config['lighting'] or new_config['lighting']['point_lights'] is None:
+            new_config['lighting']['point_lights'] = []
+        
+        new_config['lighting']['point_lights'].append(new_light)
+        print(f"INFO: Added a point light at camera position for ArchitecTHOR scene {scene_id}.")
+
     return new_config
 
 def main():
@@ -305,7 +326,7 @@ def main():
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="/home/chujie/Data/ESOT500syn/test/output/ESOT500syn_dataset",
+        default="/DATA/jiechu/datasets/ESOT500syn",
         help="Root directory to save the generated config folders."
     )
     args = parser.parse_args()

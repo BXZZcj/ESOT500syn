@@ -1,16 +1,16 @@
 ﻿env:
-  env_type: "ArchitecTHOR" # ArchitecTHOR, ReplicaCAD, RoboCasa
+  env_type: "ReplicaCAD" # ArchitecTHOR, ReplicaCAD, RoboCasa
   robot_uids: "none"
   obs_mode: "sensor_data"
 
 scene:
   robocasa_params: {layout_ids: 9, style_ids: -1} # layout_ids 0 to 9, style_ids 0 to 11
   architecthor_params: {build_config_idx: 4} # 0 to 9
-  replicacad_params: {build_config_idx: 15} # 0 to 5
+  replicacad_params: {build_config_idx: 0} # 0 to 5
 
 simulation:
-  sim_backend: "cpu"
-  num_steps: 1
+  sim_backend: "gpu"
+  num_steps: 100
   seed: 43
   control_freq: 20
   sim_freq: 100
@@ -35,15 +35,15 @@ camera:
   width: 1280
   height: 720
   # Suitable for ArchitecTHOR
-  pose_p: [-1, -1, 2]
-  pose_g: [-2, -2, 0]
+  # pose_p: [-1, -1, 2]
+  # pose_g: [-2, -2, 0]
   # Suitable for ReplicaCAD
-  # pose_p: [0, -3, 2]
-  # pose_g: [0, 0, 1]
+  pose_p: [0, -3, 2]
+  pose_g: [0, 0, 1]
   # Suitable for RoboCasa
   # pose_p: [1.6, -2.2, 3.3]
   # pose_g: [3, 0.7, -2]
-  shader_pack: "rt-fast"
+  shader_pack: "default"
   
   motion:
     type: "gentle_drift"
@@ -59,20 +59,25 @@ custom_asset:
   name: "cracker_box"
   visual_filepath: "~/.maniskill/data/assets/mani_skill2_ycb/models/003_cracker_box/textured.obj"
   collision_filepath: "~/.maniskill/data/assets/mani_skill2_ycb/models/003_cracker_box/collision.ply"
-  initial_pose_p: [-1, 3.0, 1.0]
+  initial_pose_p: [0, -1, 1.5]
   initial_pose_q: [0.707, 0, 0, 0.707]
 
-  motion_mode: "composite"
+  motion_mode: "circular_xy"
   motion_params:
-    - motion_mode: "lissajous_xy"
-      motion_params:
-        x_radius: 0.6
-        y_radius: 0.3
-        speed: 0.1
-    - motion_mode: "bouncing_z"
-      motion_params:
-        height: 0.4
-        duration: 80
+    radius: 0.6
+    speed: 0.15
+
+  # motion_mode: "composite"
+  # motion_params:
+  #   - motion_mode: "lissajous_xy"
+  #     motion_params:
+  #       x_radius: 0.6
+  #       y_radius: 0.3
+  #       speed: 0.1
+  #   - motion_mode: "bouncing_z"
+  #     motion_params:
+  #       height: 0.4
+  #       duration: 80
 
 distractor_assets:
   - enable: true

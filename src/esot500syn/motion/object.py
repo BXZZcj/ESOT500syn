@@ -283,23 +283,49 @@ def motion_drunkards_walk_3d(mixin, start_pose, config):
 
 @register_motion_pattern("composite")
 def motion_composite(mixin, start_pose, config):
+    # Get the list of sub-patterns from the top-level config
     sub_patterns = config.get("motion_params", [])
-    if not sub_patterns: return None
-    start_p_np, accumulated_p_offset, accumulated_q_delta = np.array(start_pose.p), np.zeros(3), np.array([1.0, 0.0, 0.0, 0.0])
-    start_q_inv = start_pose.inv().q
+    if not sub_patterns: 
+        return start_pose # If no sub-patterns, return the start pose
+    start_p_np = np.array(start_pose.p)
+    accumulated_p_offset = np.zeros(3)
+    
+    # Rotation accumulation requires special handling
+    # We start from the identity quaternion and left-multiply the rotation increments from sub-patterns
+    accumulated_q_delta = np.array([1.0, 0.0, 0.0, 0.0]) # w, x, y, z
     for sub_config in sub_patterns:
-        sub_motion_mode = sub_config.get("motion_mode")
-        if not sub_motion_mode: continue
+        sub_motion_mode = sub_config.get("type") # Note: the key for sub-pattern's type is "type"
+        if not sub_motion_mode: 
+            continue
+            
         sub_motion_func = MOTION_PATTERNS.get(sub_motion_mode)
         if not sub_motion_func:
             print(f"Warning: Composite motion could not find sub-pattern '{sub_motion_mode}'. Skipping.")
             continue
-        new_pose = sub_motion_func(mixin, start_pose, sub_config)
-        if new_pose is None: continue
+        # --- Core fix ---
+        # We need to construct a "config" dictionary suitable for sub-pattern's expectation.
+        # Sub-patterns expect their parameters under the "params" key in sub_config.
+        # We put these parameters under a new key named "motion_params".
+        sub_motion_config_for_call = {
+            "motion_params": sub_config.get("params", {})
+        }
+        
+        # Call the sub-motion function using this newly constructed config dictionary
+        new_pose = sub_motion_func(mixin, start_pose, sub_motion_config_for_call)
+        
+        if new_pose is None: 
+            continue
+        # Calculate translation offset and accumulate
         p_offset = np.array(new_pose.p) - start_p_np
         accumulated_p_offset += p_offset
-        q_delta = t3d_quat.qmult(np.array(new_pose.q), start_q_inv)
+        # Calculate rotation increment and accumulate
+        # Rotation increment = new_q * inverse(start_q)
+        q_delta = t3d_quat.qmult(np.array(new_pose.q), t3d_quat.qinverse(start_pose.q))
         accumulated_q_delta = t3d_quat.qmult(q_delta, accumulated_q_delta)
+    # Apply accumulated translation offset to the start position
     final_p = start_p_np + accumulated_p_offset
+    
+    # Apply accumulated rotation increment to the start rotation
     final_q = t3d_quat.qmult(accumulated_q_delta, start_pose.q)
+    
     return sapien.Pose(p=final_p.tolist(), q=final_q.tolist())

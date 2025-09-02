@@ -9,32 +9,73 @@ scene_sampling:
 asset_sampling:
   discovery_paths:
     - "~/.maniskill/data/assets/mani_skill2_ycb/models"
-  
   target_motion_pool:
-    - { type: "oscillate_along_axis", params: { amplitude: [0.6, 1.2], speed: [0.1, 0.25] } }
-    - { type: "spin_in_place", params: { speed: [0.15, 0.4] } }
-    - { type: "tumble", params: { spin_speeds: [[0.08, 0.08, 0.1], [0.2, 0.2, 0.25]] } }
-    - { type: "circular_xy", params: { radius: [0.8, 1.5], speed: [0.15, 0.3] } }
-    - { type: "random_walk_xy", params: { speed: [0.01, 0.03] } }
-    - { type: "drunkards_walk_3d", params: { pos_speed: [0.01, 0.025], rot_speed: [0.1, 0.25] } }
-
+    # Option 1: "floating drift" composite motion (speed further reduced)
+    - type: "composite"
+      params:
+        # Sub-pattern 1: Random walk in XY plane, slower speed, like drifting
+        - type: "random_walk_xy"
+          params: { speed: [0.003, 0.008], turn_rate: [0.05, 0.2] } # speed reduced
+        
+        # Sub-pattern 2: Oscillate along Z axis, slower frequency
+        - type: "oscillate_along_axis"
+          params: { axis: [0, 0, 1], amplitude: [0.15, 0.4], speed: [0.03, 0.07] } # speed reduced
+        
+        # Sub-pattern 3: Nod in place rotation, gentler amplitude
+        - type: "nod_in_place"
+          params: { axis: [1, 0, 0], amplitude: [0.2, 0.5], speed: [0.04, 0.12] } # speed reduced
+        # Sub-pattern 4: "micro random layer", jitter speed also reduced accordingly
+        - type: "drunkards_walk_3d"
+          params: 
+            pos_speed: [0.0005, 0.002]  # position jitter speed reduced
+            rot_speed: [0.005, 0.02]    # attitude jitter speed reduced
+    # Option 2: "tumble and circle" composite motion (speed further reduced)
+    - type: "composite"
+      params:
+        # Sub-pattern 1: Slow tumble, speed reduced
+        - type: "tumble"
+          params: { spin_speeds: [[0.02, 0.02, 0.03], [0.06, 0.06, 0.08]] } # spin speed reduced
+        
+        # Sub-pattern 2: Circular XY motion with slower orbiting
+        - type: "circular_xy"
+          params: { radius: [0.3, 0.7], speed: [0.04, 0.09] } # speed reduced
+        
+        # Sub-pattern 3: Oscillate along Z, slower frequency
+        - type: "oscillate_along_axis"
+          params: { axis: [0, 0, 1], amplitude: [0.2, 0.5], speed: [0.03, 0.08] } # speed reduced
+        # Sub-pattern 4: "micro random layer", disturbance speed also reduced
+        - type: "drunkards_walk_3d"
+          params: 
+            pos_speed: [0.0005, 0.0025] # position disturbance speed reduced
+            rot_speed: [0.01, 0.03]     # attitude disturbance speed reduced
+    # Option 3: "drunkard's walk" pattern (speed further reduced)
+    - type: "drunkards_walk_3d"
+      params: 
+        pos_speed: [0.005, 0.012] # translational speed reduced
+        rot_speed: [0.03, 0.09]   # rotational speed reduced
   distractor_motion_pool:
     - { type: "static" }
-    - { type: "spin_in_place", params: { speed: [0.1, 0.3] } }
-    - { type: "random_walk_xy", params: { speed: [0.01, 0.025], turn_rate: [0.1, 0.3] } }
-    - { type: "oscillate_along_axis", params: { amplitude: [0.4, 0.8], speed: [0.08, 0.2] } }
-    - { type: "tumble", params: { spin_speeds: [[0.05, 0.05, 0.05], [0.15, 0.15, 0.15]] } }
-
+    - type: "spin_in_place"
+      params: { speed: [0.03, 0.08] } # speed reduced
+    - type: "random_walk_xy"
+      params: { speed: [0.002, 0.007], turn_rate: [0.1, 0.3] } # speed reduced
+    - type: "oscillate_along_axis"
+      params: 
+        amplitude: [0.2, 0.5] 
+        speed: [0.02, 0.06] # speed reduced
+    - type: "tumble"
+      params: { spin_speeds: [[0.01, 0.01, 0.01], [0.05, 0.05, 0.05]] } # spin speed significantly reduced
   num_distractors_range: [0, 6]
   local_spawn_box:
     target:
-      x_forward: [0.2, 1.5]
+      x_forward: [0.05, 0.7]
       y_left:    [-0.5, 0.5]
       z_up:      [-0.6, 0.6]
     distractor:
-      x_forward: [0.2, 2.0]
+      x_forward: [0.03, 2.0]
       y_left:    [-1.2, 1.2]
       z_up:      [-0.8, 0.8]
+
 
 # --- 3. Camera Pose and Movement ---
 camera_setup:

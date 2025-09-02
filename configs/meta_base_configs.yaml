@@ -1,5 +1,5 @@
 ﻿batch_settings:
-  master_seed: 43
+  master_seed: 44
   num_sequences: 10
   start_index: 0
 
@@ -8,10 +8,10 @@ env:
   obs_mode: "sensor_data"
 
 simulation:
-  sim_backend: "cpu"
-  num_steps: 10
-  control_freq: 20
-  sim_freq: 100
+  sim_backend: "gpu"
+  num_steps: 5000
+  control_freq: 500
+  sim_freq: 1000
 
 output:
   # output_dir: "output/ESOT500syn_dataset"
@@ -32,4 +32,4 @@ lighting:
 camera:
   width: 1280
   height: 720
-  shader_pack: "rt-fast"
+  shader_pack: "default"

@@ -1,0 +1,165 @@
+﻿env:
+  robot_uids: none
+  obs_mode: sensor_data
+  env_type: ReplicaCAD
+simulation:
+  sim_backend: gpu
+  num_steps: 10
+  control_freq: 500
+  sim_freq: 1000
+  seed: 44
+output:
+  render_mode: rgb_array
+  save_annotations: true
+  output_dir: /home/chujie/Data/ESOT500syn/test/images/ESOT500syn_dataset/seq_0000
+lighting:
+  ambient:
+  - 0.3
+  - 0.3
+  - 0.3
+  point_lights:
+  - position:
+    - -1.0
+    - 3.0
+    - 2.2
+    color:
+    - 1
+    - 1
+    - 1
+  - position:
+    - 0.5
+    - 1.5
+    - 2.2
+    color:
+    - 1
+    - 1
+    - 1
+  - position:
+    - 1.5
+    - -0.5
+    - 2.2
+    color:
+    - 1
+    - 1
+    - 1
+  directional_light:
+    direction:
+    - 0.2
+    - -0.6
+    - -1.0
+    color:
+    - 0.6
+    - 0.6
+    - 0.6
+    shadow: false
+camera:
+  width: 1280
+  height: 720
+  shader_pack: default
+  pose_p:
+  - 0
+  - 0
+  - 2
+  pose_g:
+  - 3
+  - -3
+  - 0.5
+  motion:
+    type: gentle_drift
+    params:
+      max_pos_offset: 0.02
+      max_rot_offset: 0.01
+      turn_rate: 0.01
+scene:
+  replicacad_params:
+    build_config_idx: 4
+custom_asset:
+  enable: true
+  name: 058_golf_ball
+  visual_filepath: /home/chujie/.maniskill/data/assets/mani_skill2_ycb/models/058_golf_ball/textured.obj
+  collision_filepath: /home/chujie/.maniskill/data/assets/mani_skill2_ycb/models/058_golf_ball/collision.ply
+  initial_pose_p:
+  - 0.44768065214157104
+  - -0.31899115443229675
+  - 2.147017002105713
+  initial_pose_q:
+  - -0.5091328116276558
+  - 0.859394374561184
+  - 0.04049562863378588
+  - -0.024190765971005456
+  motion_mode: composite
+  motion_params:
+  - type: random_walk_xy
+    params:
+      speed: 0.008389791422167827
+      turn_rate: 0.06722572663856702
+  - type: oscillate_along_axis
+    params:
+      axis:
+      - 0
+      - 0
+      - 1
+      amplitude: 0.3519151134746268
+      speed: 0.09781679895186358
+  - type: nod_in_place
+    params:
+      axis:
+      - 1
+      - 0
+      - 0
+      amplitude: 0.4566259907412621
+      speed: 0.1509025697783068
+  - type: drunkards_walk_3d
+    params:
+      pos_speed: 0.0027982558403154842
+      rot_speed: 0.011998989612239112
+      
+  # motion_mode: random_walk_xy
+  # motion_params:
+  #   speed: 
+  #     - 0.005
+  #   turn_rate: 
+  #     - 0.05
+
+  # motion_mode: composite
+  # motion_params:
+  # - type: random_walk_xy
+  #   params:
+  #     speed:
+  #     - 0.005
+  #     - 0.012
+  #     turn_rate:
+  #     - 0.05
+  #     - 0.2
+  # - type: oscillate_along_axis
+  #   params:
+  #     axis:
+  #     - 0
+  #     - 0
+  #     - 1
+  #     amplitude:
+  #     - 0.15
+  #     - 0.4
+  #     speed:
+  #     - 0.05
+  #     - 0.1
+  # - type: nod_in_place
+  #   params:
+  #     axis:
+  #     - 1
+  #     - 0
+  #     - 0
+  #     amplitude:
+  #     - 0.2
+  #     - 0.5
+  #     speed:
+  #     - 0.06
+  #     - 0.2
+  # - type: drunkards_walk_3d
+  #   params:
+  #     pos_speed:
+  #     - 0.001
+  #     - 0.003
+  #     rot_speed:
+  #     - 0.01
+  #     - 0.04
