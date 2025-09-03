@@ -326,7 +326,7 @@ def main():
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="/DATA/jiechu/datasets/ESOT500syn",
+        default="/DATA/jiechu/datasets/ESOT500syn_dataset",
         help="Root directory to save the generated config folders."
     )
     args = parser.parse_args()

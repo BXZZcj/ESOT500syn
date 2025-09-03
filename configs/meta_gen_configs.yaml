@@ -10,72 +10,54 @@ asset_sampling:
   discovery_paths:
     - "~/.maniskill/data/assets/mani_skill2_ycb/models"
   target_motion_pool:
-    # Option 1: "floating drift" composite motion (speed further reduced)
+    # Option 1: "Furious Multi-Axis Oscillation" (Recommended! Most intense displacement, strongest sense of energy)
+    # Forcibly combines large amplitude, high-speed oscillations in X, Y, and Z directions to ensure the object moves back and forth intensely within the field of view.
     - type: "composite"
       params:
-        # Sub-pattern 1: Random walk in XY plane, slower speed, like drifting
-        - type: "random_walk_xy"
-          params: { speed: [0.003, 0.008], turn_rate: [0.05, 0.2] } # speed reduced
-        
-        # Sub-pattern 2: Oscillate along Z axis, slower frequency
-        - type: "oscillate_along_axis"
-          params: { axis: [0, 0, 1], amplitude: [0.15, 0.4], speed: [0.03, 0.07] } # speed reduced
-        
-        # Sub-pattern 3: Nod in place rotation, gentler amplitude
-        - type: "nod_in_place"
-          params: { axis: [1, 0, 0], amplitude: [0.2, 0.5], speed: [0.04, 0.12] } # speed reduced
-        # Sub-pattern 4: "micro random layer", jitter speed also reduced accordingly
-        - type: "drunkards_walk_3d"
-          params: 
-            pos_speed: [0.0005, 0.002]  # position jitter speed reduced
-            rot_speed: [0.005, 0.02]    # attitude jitter speed reduced
-    # Option 2: "tumble and circle" composite motion (speed further reduced)
-    - type: "composite"
-      params:
-        # Sub-pattern 1: Slow tumble, speed reduced
+        # Sub-mode 1: Responsible for intense but visually smooth rotation
         - type: "tumble"
-          params: { spin_speeds: [[0.02, 0.02, 0.03], [0.06, 0.06, 0.08]] } # spin speed reduced
-        
-        # Sub-pattern 2: Circular XY motion with slower orbiting
-        - type: "circular_xy"
-          params: { radius: [0.3, 0.7], speed: [0.04, 0.09] } # speed reduced
-        
-        # Sub-pattern 3: Oscillate along Z, slower frequency
+          params: { spin_speeds: [[0.05, 0.05, 0.05], [0.1, 0.1, 0.1]] }
+        # --- Core: Simultaneous oscillation along X, Y, Z axes, providing comprehensive, large amplitude displacement ---
+        # Sub-mode 2: Large amplitude oscillation along the X-axis (left and right)
         - type: "oscillate_along_axis"
-          params: { axis: [0, 0, 1], amplitude: [0.2, 0.5], speed: [0.03, 0.08] } # speed reduced
-        # Sub-pattern 4: "micro random layer", disturbance speed also reduced
-        - type: "drunkards_walk_3d"
-          params: 
-            pos_speed: [0.0005, 0.0025] # position disturbance speed reduced
-            rot_speed: [0.01, 0.03]     # attitude disturbance speed reduced
-    # Option 3: "drunkard's walk" pattern (speed further reduced)
-    - type: "drunkards_walk_3d"
-      params: 
-        pos_speed: [0.005, 0.012] # translational speed reduced
-        rot_speed: [0.03, 0.09]   # rotational speed reduced
+          params: { axis: [1, 0, 0], amplitude: [0.3, 0.5], speed: [0.05, 0.1] } # Increased amplitude for more displacement
+        # Sub-mode 3: Large amplitude oscillation along the Y-axis (forward and backward)
+        - type: "oscillate_along_axis"
+          params: { axis: [0, 1, 0], amplitude: [0.3, 0.5], speed: [0.05, 0.1] } # Increased amplitude for more displacement
+        # Sub-mode 4: Medium amplitude oscillation along the Z-axis (up and down)
+        - type: "oscillate_along_axis"
+          params: { axis: [0, 0, 1], amplitude: [0.2, 0.4], speed: [0.05, 0.1] }
+    # Option 2: "Oscillating Drift" (More diverse displacement modes)
+    # Combines basic random drift with intense Z-axis oscillation to create a more unpredictable movement trajectory.
+    - type: "composite"
+      params:
+        # Sub-mode 1: Provides a basic, unpredictable drift displacement
+        - type: "random_walk_xy"
+          params: { speed: [0.05, 0.1], turn_rate: [0.1, 0.3] } # Increased speed for more noticeable displacement
+        # Sub-mode 2: Provides intense up and down oscillation displacement
+        - type: "oscillate_along_axis"
+          params: { axis: [0, 0, 1], amplitude: [0.3, 0.6], speed: [0.05, 0.1] } # Increased amplitude and speed
+        # Sub-mode 3: Provides a more "clumsy" feeling rotation, rather than uniform tumbling
+        - type: "nod_in_place"
+          params: { axis: [1, 1, 0], amplitude: [0.4, 0.8], speed: [0.05, 0.1] }
   distractor_motion_pool:
+    # Distractors remain unchanged, primarily "static" to highlight the "movement" of the target
     - { type: "static" }
     - type: "spin_in_place"
-      params: { speed: [0.03, 0.08] } # speed reduced
-    - type: "random_walk_xy"
-      params: { speed: [0.002, 0.007], turn_rate: [0.1, 0.3] } # speed reduced
+      params: { speed: [0.05, 0.1] }
     - type: "oscillate_along_axis"
-      params: 
-        amplitude: [0.2, 0.5] 
-        speed: [0.02, 0.06] # speed reduced
-    - type: "tumble"
-      params: { spin_speeds: [[0.01, 0.01, 0.01], [0.05, 0.05, 0.05]] } # spin speed significantly reduced
+      params: { amplitude: [0.1, 0.3], speed: [0.05, 0.1] }
   num_distractors_range: [0, 6]
   local_spawn_box:
+    # Maintain a strictly reduced spawning area, which is the key premise for achieving large amplitude oscillations
     target:
-      x_forward: [0.05, 0.7]
-      y_left:    [-0.5, 0.5]
-      z_up:      [-0.6, 0.6]
+      x_forward: [0.3, 0.6]
+      y_left:    [-0.2, 0.2]
+      z_up:      [-0.15, 0.15]
     distractor:
-      x_forward: [0.03, 2.0]
+      x_forward: [0.2, 2.0]
       y_left:    [-1.2, 1.2]
       z_up:      [-0.8, 0.8]
-
 
 # --- 3. Camera Pose and Movement ---
 camera_setup:

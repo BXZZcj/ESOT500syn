@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 def main():
     parser = argparse.ArgumentParser(description="ESOT500syn: Batch Runner")
-    parser.add_argument("--configs_dir", type=str, default="/DATA/jiechu/datasets/ESOT500syn", help="Root directory containing the generated config folders.")
+    parser.add_argument("--configs_dir", type=str, default="/DATA/jiechu/datasets/ESOT500syn_dataset", help="Root directory containing the generated config folders.")
     parser.add_argument("--runner_script", type=str, default="/home/chujie/Data/ESOT500syn/script/generate_single_sequence.py", help="Path to the single sequence runner script.")
     args = parser.parse_args()
 
