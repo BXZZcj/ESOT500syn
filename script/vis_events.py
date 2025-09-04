@@ -102,12 +102,12 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     # core input/output parameters
-    parser.add_argument("-i", "--input_file", type=str, help="the path to the .npz event stream file.")
-    parser.add_argument("-o", "--output_file", type=str, default=None, help="the path to the output .mp4 video file. if not provided, will be automatically generated based on the input file name.")
+    parser.add_argument("-i", "--input_file", type=str, default="/DATA/jiechu/datasets/ESOT500syn_dataset/seq_0000/rgb-ceil_10-fps_500-events.npz", help="the path to the .npz event stream file.")
+    parser.add_argument("-o", "--output_file", type=str, default="/home/chujie/Data/ESOT500syn/test/seq_0000_events_visualization.mp4", help="the path to the output .mp4 video file. if not provided, will be automatically generated based on the input file name.")
     
     # video metadata (since .npz does not contain this information, user needs to provide)
-    parser.add_argument("--height", type=int, required=True, help="**required** the height of the original video (e.g. 260).")
-    parser.add_argument("--width", type=int, required=True, help="**required** the width of the original video (e.g. 346).")
+    parser.add_argument("--height", type=int, default = 1280, help="**required** the height of the original video (e.g. 260).")
+    parser.add_argument("--width", type=int, default = 720, help="**required** the width of the original video (e.g. 346).")
     
     # visualization control parameters
     parser.add_argument("--fps", type=int, default=30, help="the frame rate of the output video.")

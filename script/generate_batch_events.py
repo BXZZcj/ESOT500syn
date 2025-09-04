@@ -20,7 +20,9 @@ def process_all_sequences(
     root_data_dir: Path, 
     fps: int, 
     batch_size: int, 
-    stage2_batch_size: int
+    stage2_batch_size: int,    
+    height: int,  
+    width: int    
 ):
     """
     Traverse all 'seq_xxxx' folders under the specified root directory, 
@@ -73,6 +75,8 @@ def process_all_sequences(
             "--fps", str(fps),
             "--batch_size", str(batch_size),
             "--stage2_batch_size", str(stage2_batch_size),
+            "--height", str(height),
+            "--width", str(width),
             "--write_event_frame_video", "False",  # <-- Hardcoded to disable video generation
             "--infer_type", "pano",
             "--log_level", "info"
@@ -101,12 +105,14 @@ if __name__ == "__main__":
     )
     # Core parameters for data generation
     parser.add_argument(
-        "--root_data_dir", 
+        "--root_data_dir",
         type=str,
-        default="/home/chujie/Data/ESOT500syn/test/output/ESOT500syn_dataset",
+        default="/DATA/jiechu/datasets/ESOT500syn_dataset",
         help="Path to the root data directory containing all seq_xxxx folders."
     )
-    parser.add_argument("--fps", type=int, default=30, help="CRITICAL: Frame rate of the input image sequence. Must match the physical capture rate.")
+    parser.add_argument("--fps", type=int, default=500, help="CRITICAL: Frame rate of the input image sequence. Must match the physical capture rate.")
+    parser.add_argument("--width", type=int, default=1280, help="Target width for event generation.")
+    parser.add_argument("--height", type=int, default=720, help="Target height for event generation.")
     parser.add_argument("--batch_size", "-b", type=int, default=8, help="Batch size for first stage inference (video->voxel).")
     parser.add_argument("--stage2_batch_size", type=int, default=24, help="Batch size for second stage inference (voxel->event).")
     
@@ -121,5 +127,7 @@ if __name__ == "__main__":
             root_data_dir=root_path,
             fps=args.fps,
             batch_size=args.batch_size,
-            stage2_batch_size=args.stage2_batch_size
+            stage2_batch_size=args.stage2_batch_size,    
+            height = args.height,  
+            width = args.width    
         )

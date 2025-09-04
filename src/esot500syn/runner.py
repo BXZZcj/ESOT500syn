@@ -100,31 +100,50 @@ def run(config: dict):
             Image.fromarray(img_to_save).save(rgb_dir / f"rgb_{step:04d}.png")
 
             if out_cfg.get("save_annotations") and asset_id is not None and "Segmentation" in sensor_data:
+                # --- First: Always calculate modal mask and amodal mask ---
                 modal_mask = (sensor_data["Segmentation"][..., 1] == asset_id).squeeze().cpu().numpy()
-                if bbox_from_mask(modal_mask):
+                
+                # Get pose information, even if the object is outside the field of view, its world coordinates exist
+                pose_in_cam = (cam_sensor.camera.get_global_pose().inv() * asset_actor.pose)
+                t_cam = pose_in_cam.p.cpu().numpy().flatten()
+                q_cam_wxyz = pose_in_cam.q.cpu().numpy().flatten()
+                
+                amodal_mask = np.zeros((cam_cfg['height'], cam_cfg['width']), dtype=np.uint8)
+                if amodal_verts is not None:
+                    amodal_mask = rasterize_amodal_mask(
+                        amodal_verts, amodal_faces, t_cam, q_cam_wxyz,
+                        fx, fy, cx, cy, cam_cfg['width'], cam_cfg['height']
+                    )
+
+                # --- Second: Get BBox, if empty, retain None ---
+                bbox_modal = bbox_from_mask(modal_mask)
+                bbox_amodal = bbox_from_mask(amodal_mask)
+                
+                # --- Third: Conditionally save mask images and set paths ---
+                modal_mask_path = None
+                if bbox_modal:
+                    modal_mask_path = f"modal_mask/modal_mask_{step:04d}.png"
                     Image.fromarray((modal_mask * 255).astype(np.uint8)).save(modal_mask_dir / f"modal_mask_{step:04d}.png")
-                    pose_in_cam = (cam_sensor.camera.get_global_pose().inv() * asset_actor.pose)
-                    t_cam = pose_in_cam.p.cpu().numpy().flatten()
-                    q_cam_wxyz = pose_in_cam.q.cpu().numpy().flatten()
-                    if amodal_verts is not None:
-                        amodal_mask = rasterize_amodal_mask(
-                            amodal_verts, amodal_faces, t_cam, q_cam_wxyz,
-                            fx, fy, cx, cy, cam_cfg['width'], cam_cfg['height']
-                        )
-                        if bbox_from_mask(amodal_mask):
-                            Image.fromarray(amodal_mask).save(amodal_mask_dir / f"amodal_mask_{step:04d}.png")
-                            all_frames.append({
-                                "rgb_path": f"rgb/rgb_{step:04d}.png",
-                                "modal_mask_path": f"modal_mask/modal_mask_{step:04d}.png",
-                                "amodal_mask_path": f"amodal_mask/amodal_mask_{step:04d}.png",
-                                "bbox_modal_xywh": bbox_from_mask(modal_mask),
-                                "bbox_amodal_xywh": bbox_from_mask(amodal_mask),
-                                "class": asset_cfg.get("name"),
-                                "pose_in_camera": {
-                                    "position": t_cam.tolist(),
-                                    "orientation_wxyz": q_cam_wxyz.tolist()
-                                }
-                            })
+
+                amodal_mask_path = None
+                if bbox_amodal:
+                    amodal_mask_path = f"amodal_mask/amodal_mask_{step:04d}.png"
+                    Image.fromarray(amodal_mask).save(amodal_mask_dir / f"amodal_mask_{step:04d}.png")
+
+                # --- Fourth: Add annotations to each frame unconditionally ---
+                all_frames.append({
+                    "rgb_path": f"rgb/rgb_{step:04d}.png",
+                    "modal_mask_path": modal_mask_path,
+                    "amodal_mask_path": amodal_mask_path,
+                    # Use or [0,0,0,0] to gracefully handle None cases
+                    "bbox_modal_xywh": bbox_modal or [0, 0, 0, 0],
+                    "bbox_amodal_xywh": bbox_amodal or [0, 0, 0, 0],
+                    "class": asset_cfg.get("name"),
+                    "pose_in_camera": {
+                        "position": t_cam.tolist(),
+                        "orientation_wxyz": q_cam_wxyz.tolist()
+                    }
+                })
 
             if (step + 1) % 50 == 0 or step == sim_cfg['num_steps'] - 1:
                 print(f"  ... simulating and saving frame {step + 1}/{sim_cfg['num_steps']}")
