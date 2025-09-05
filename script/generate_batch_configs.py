@@ -314,19 +314,19 @@ def main():
     parser.add_argument(
         "--base_config",
         type=str,
-        default="/home/chujie/Data/ESOT500syn/configs/meta_base_configs.yaml",
+        default="/mnt/f1590153-780c-408d-b394-7b3b56082548/ESOT500/ESOT500syn/configs/meta_base_configs.yaml",
         help="Path to the base YAML config."
     )
     parser.add_argument(
         "--gen_config",
         type=str,
-        default="/home/chujie/Data/ESOT500syn/configs/meta_gen_configs.yaml",
+        default="/mnt/f1590153-780c-408d-b394-7b3b56082548/ESOT500/ESOT500syn/configs/meta_gen_configs.yaml",
         help="Path to the generation space YAML config."
     )
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="/DATA/jiechu/datasets/ESOT500syn_dataset",
+        default="/mnt/f1590153-780c-408d-b394-7b3b56082548/ESOT500/ESOT500syn_dataset",
         help="Root directory to save the generated config folders."
     )
     args = parser.parse_args()
@@ -372,8 +372,11 @@ def main():
     root_output_dir.mkdir(parents=True, exist_ok=True)
     print(f"Generating {num_sequences} configurations in '{root_output_dir.resolve()}'...")
 
+    seed_generator = random.Random(master_seed)
+    SEED_MAX = 2**32 - 1
+    
     for i in range(start_index, start_index + num_sequences):
-        sequence_seed = master_seed + i
+        sequence_seed = seed_generator.randint(0, SEED_MAX)
         random.seed(sequence_seed)
         np.random.seed(sequence_seed)
 

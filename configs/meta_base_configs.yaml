@@ -1,6 +1,6 @@
 ﻿batch_settings:
-  master_seed: 44
-  num_sequences: 10
+  master_seed: 42
+  num_sequences: 440
   start_index: 0
 
 env:
@@ -21,9 +21,9 @@ output:
 lighting:
   ambient: [0.3, 0.3, 0.3]
   point_lights:
-    - { position: [-1.0,  3.0,  2.2], color: [1, 1, 1] }
-    - { position: [ 0.5,  1.5,  2.2], color: [1, 1, 1] }
-    - { position: [ 1.5, -0.5,  2.2], color: [1, 1, 1] }
+    - { position: [-1.0, 3.0, 2.2], color: [1, 1, 1] }
+    - { position: [0.5, 1.5, 2.2], color: [1, 1, 1] }
+    - { position: [1.5, -0.5, 2.2], color: [1, 1, 1] }
   directional_light:
     direction: [0.2, -0.6, -1.0]
     color: [0.6, 0.6, 0.6]

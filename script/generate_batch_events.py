@@ -107,14 +107,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--root_data_dir",
         type=str,
-        default="/DATA/jiechu/datasets/ESOT500syn_dataset",
+        default="/mnt/f1590153-780c-408d-b394-7b3b56082548/ESOT500/ESOT500syn_dataset",
         help="Path to the root data directory containing all seq_xxxx folders."
     )
     parser.add_argument("--fps", type=int, default=500, help="CRITICAL: Frame rate of the input image sequence. Must match the physical capture rate.")
     parser.add_argument("--width", type=int, default=1280, help="Target width for event generation.")
     parser.add_argument("--height", type=int, default=720, help="Target height for event generation.")
-    parser.add_argument("--batch_size", "-b", type=int, default=8, help="Batch size for first stage inference (video->voxel).")
-    parser.add_argument("--stage2_batch_size", type=int, default=24, help="Batch size for second stage inference (voxel->event).")
+    parser.add_argument("--batch_size", "-b", type=int, default=1, help="Batch size for first stage inference (video->voxel).")
+    parser.add_argument("--stage2_batch_size", type=int, default=1, help="Batch size for second stage inference (voxel->event).")
     
     args = parser.parse_args()
     
